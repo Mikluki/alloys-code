@@ -1,0 +1,190 @@
+#!/bin/bash
+
+# Find duplicate POSCAR files across directories based on canonical form comparison
+
+show_help() {
+    cat << 'EOF'
+Usage: find-duplicate-poscars [--precision N] PATTERN [PATTERN...]
+
+Find duplicate POSCAR files across directories based on structure comparison.
+
+OPTIONS:
+    --precision N    Decimal precision for comparison (default: 4)
+    --help, -h      Show this help message
+
+ARGUMENTS:
+    PATTERN         One or more glob patterns for directories
+                    Example: "entries/liquid*/" "entries/solid*/"
+
+OUTPUT:
+    Creates found-YYYYMMDD_HHMMSS.txt with duplicate groups:
+    
+    # Duplicate group 1 (3 directories)
+    /path/to/dir1
+    /path/to/dir2
+    /path/to/dir3
+    
+    Use with xargs to move duplicates:
+    cat found-*.txt | grep -v '^#' | xargs -I {} mv {} archive/
+
+EXAMPLES:
+    find-duplicate-poscars "entries/liquid*/"
+    find-duplicate-poscars --precision 6 "set_*/" "calc_*/"
+EOF
+}
+
+find_duplicate_poscars() {
+    local precision=4
+    local patterns=()
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --precision)
+                if [[ -z "$2" ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                    echo "Error: --precision requires a positive integer" >&2
+                    echo "" >&2
+                    show_help >&2
+                    return 1
+                fi
+                precision="$2"
+                shift 2
+                ;;
+            --help|-h)
+                show_help
+                return 0
+                ;;
+            -*)
+                echo "Error: Unknown option: $1" >&2
+                echo "" >&2
+                show_help >&2
+                return 1
+                ;;
+            *)
+                patterns+=("$1")
+                shift
+                ;;
+        esac
+    done
+    
+    # Validate inputs
+    if [[ ${#patterns[@]} -eq 0 ]]; then
+        echo "Error: No directory patterns provided" >&2
+        echo "" >&2
+        show_help >&2
+        return 1
+    fi
+    
+    # Expand globs and collect directories
+    local dirs=()
+    for pattern in "${patterns[@]}"; do
+        for dir in $pattern; do
+            if [[ -d "$dir" ]]; then
+                dirs+=("$(realpath "$dir")")
+            fi
+        done
+    done
+    
+    if [[ ${#dirs[@]} -eq 0 ]]; then
+        echo "Error: No directories found matching patterns" >&2
+        return 1
+    fi
+    
+    echo "Scanning ${#dirs[@]} directories with precision=$precision"
+    
+    # Associative array: hash -> space-separated directory paths
+    declare -A hash_to_dirs
+    local processed=0
+    local missing=0
+    local total_dirs=${#dirs[@]}
+    
+    # Process each directory
+    for dir in "${dirs[@]}"; do
+        local poscar="$dir/POSCAR"
+        
+        if [[ ! -f "$poscar" ]]; then
+            echo -ne "\033[K"  # Clear line
+            echo "ERROR: $dir - missing POSCAR" >&2
+            ((missing++))
+            ((processed++))
+            continue
+        fi
+        
+        # Generate canonical form and hash it
+        local canonical=$(generate_canonical_poscar "$poscar" "$precision")
+        local hash=$(echo "$canonical" | md5sum | awk '{print $1}')
+        
+        # Append directory to hash group
+        if [[ -n "${hash_to_dirs[$hash]}" ]]; then
+            hash_to_dirs[$hash]="${hash_to_dirs[$hash]} $dir"
+        else
+            hash_to_dirs[$hash]="$dir"
+        fi
+        
+        ((processed++))
+        
+        # Show progress
+        local percentage=$(awk "BEGIN {printf \"%.1f\", ($processed/$total_dirs)*100}")
+        printf "Processing: %d/%d (%.1f%%)\r" $processed $total_dirs $percentage
+    done
+    
+    # Clear progress line and print final status
+    printf "\033[K"  # Clear line
+    echo "Processed: $processed directories"
+    if [[ $missing -gt 0 ]]; then
+        echo "Missing POSCAR: $missing directories" >&2
+    fi
+    
+    # Find duplicate groups (2+ directories per hash)
+    local duplicate_groups=()
+    for hash in "${!hash_to_dirs[@]}"; do
+        local dir_list="${hash_to_dirs[$hash]}"
+        local count=$(echo "$dir_list" | wc -w)
+        
+        if [[ $count -ge 2 ]]; then
+            duplicate_groups+=("$dir_list")
+        fi
+    done
+    
+    # Report results
+    if [[ ${#duplicate_groups[@]} -eq 0 ]]; then
+        echo ">> Grats, No duplicates found! 🚀"
+        return 0
+    fi
+    
+    # Create output file with timestamp
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local output_file="found-${timestamp}.txt"
+    
+    local group_num=1
+    local total_duplicate_dirs=0
+    
+    for group in "${duplicate_groups[@]}"; do
+        local count=$(echo "$group" | wc -w)
+        total_duplicate_dirs=$((total_duplicate_dirs + count))
+        
+        echo "# Duplicate group $group_num ($count directories)" >> "$output_file"
+        for dir in $group; do
+            echo "$dir" >> "$output_file"
+        done
+        echo "" >> "$output_file"
+        
+        ((group_num++))
+    done
+    
+    echo "Found ${#duplicate_groups[@]} duplicate groups ($total_duplicate_dirs total directories)"
+    echo "Results written to: $output_file"
+}
+
+# Helper function to generate canonical POSCAR with specified precision
+generate_canonical_poscar() {
+    local poscar="$1"
+    local precision="$2"
+    
+    awk -v prec="$precision" '{
+        if (NR <= 8) print $0
+        else printf "%.*f %.*f %.*f\n", prec, $1, prec, $2, prec, $3
+    }' "$poscar"
+}
+
+find_duplicate_poscars "$@"

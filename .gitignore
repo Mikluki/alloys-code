@@ -1,0 +1,203 @@
+# Custom patterns
+**_.md
+**_.png
+**_.svg
+**_.pdf
+**_.json
+**_.ipynb
+**.ipynb
+**.tgz
+**/00-outcar-pure
+**/outcar*/
+
+## slides
+src/modules_v2/main/xslides/*.png
+src/modules_v2/main/xds-metrics/xout*
+
+## all main
+src/modules_v2/main/*/pics/
+src/modules_v2/vsf/bin/devil/integration_test_20251006_030034
+**tables.pdf
+src/modules_v2/main/xds-metrics/x-*.pdf
+
+## md
+src/modules_v2/main/md/src-tgz
+src/modules_v2/main/md/AlCu*
+src/modules_v2/main/md/Cu46*
+
+## hull
+src/modules_v2/main/hull-eform/src
+src/modules_v2/main/hull-eform/00-hull
+src/modules_v2/main/hull-eform/x-h*
+src/venvs/*/POSCAR
+
+## liquid
+e-output**
+e-super**
+e-decorr**
+a-liquid**
+x-liquid-**
+src/modules_v2/main/liquid/*/*.svg
+src/modules_v2/main/liquid/liquid-0input/e*
+src/modules_v2/main/liquid/liquid-*/tests-input
+src/modules_v2/main/liquid/liquid-*/x-*
+src/modules_v2/main/liquid/liquid-*/e-*
+src/modules_v2/main/liquid/liquid-*/a-md*
+src/modules_v2/main/liquid/liquid-*/autocorrelation_analysis
+src/modules_v2/main/liquid/liquid-*/atom_diagnostic
+src/modules_v2/main/liquid/liquid-tests/N*
+src/modules_v2/main/liquid/*/scatter*.png
+src/modules_v2/main/liquid/liquid-tests/found.txt
+src/modules_v2/main/liquid/liquid-300k-static-efrom/pics
+
+## rand
+src/modules_v2/main/rand-eform/e-rand-**
+src/modules_v2/main/*/*.svg
+src/modules_v2/main/rand-eform/xpics/*svg
+src/modules_v2/main/rand-eform/00-hull/*
+src/modules_v2/main/rand-eform/e-0*
+src/modules_v2/main/xfigs/*png
+src/modules_v2/main/rand-eform/xresults/plots*
+
+## catxy
+src/modules_v2/main/catxy-eform/00-input-prep/init*
+src/modules_v2/main/catxy-eform/00-input-prep/test*
+src/modules_v2/main/catxy-eform/00-hull*
+src/modules_v2/main/catxy-eform/cat-test*
+src/modules_v2/main/catxy-eform/e-*
+src/modules_v2/main/catxy-eform/*.svg
+src/modules_v2/main/catxy-eform/xresults/plots*
+src/modules_v2/main/catxy-eform/*.png
+src/modules_v2/main/catxy/test3
+src/modules_v2/main/*/all_results.json
+
+## singularity build images src
+**/ifort/*/*
+!**/ifort/*/OUTCAR
+**/ifx/*/*
+!**/ifx/*/OUTCAR
+**/native/*/*
+!**/native/*/OUTCAR
+
+**/containers/cpu/src
+**/containers/cpu/vasp-cpu-dev-dir**
+**/containers/gpu/src
+**/containers/gpu/vasp.dev-**
+**/containers/cpu/vasp.dev-cpu-**
+**.sif
+
+## tests
+**test-ase**
+**test-pmg**
+**test.py
+**_test
+test--**
+
+## benchmarks
+src/bench/00-ncore-vs-time/02-zhores/x-**
+src/bench/01-kpoints-monkhorst-vs-cpu/01-zhore-res/x-**
+src/bench/01-kpoints-monkhorst-vs-cpu/data/rrand
+src/bench/01-kpoints-monkhorst-vs-cpu/data-rand
+src/bench/02-kpoints-vs-density/01-zhores-res/x-**
+src/bench/02-kpoints-vs-density/data/x-**
+src/bench/00-ncore-vs-time/data/*
+
+## examples
+src/modules/examples/flow/files/staer
+
+## tools
+tools/11-cell-edit/**POSCAR
+tools/12-mp-api/**.poscar
+tools/12-mp-api/**POTCAR
+**POTCAR
+
+## demos
+demos/**/**POSCAR
+demos/**/POTCAR
+demos/**/KPOINTS
+demos/**/INCAR
+demos/**/**poscar
+
+# Tmp files
+**.lock
+**.used_seeds_*.txt
+
+# Package specific
+**/poscars-**
+notes.md
+**MRP_API_KEY
+**/graphics/**.png
+code/01-mp_query/00-search
+docs/papers/arxiv_src
+docs/papers/src_arxiv**
+**stable_materials_summary_august_2024.csv
+**cpd-2024-11-09T21-24-14.658.json
+**mp-13
+**query--**
+**analysis-output**
+**/vasp_summary.txt
+**_entry_**
+**entries--**
+**/e--*
+**query-results
+
+**prompt.md
+**intro.md
+**response.md
+**generated_bimetals
+
+## general
+.vscode
+**tmp**
+**__pycache__
+
+**cif_mp
+**.cif
+**.log
+**.traj
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+.pytest_cache/
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+## Core latex/pdflatex auxiliary files:
+*.aux
+*.bbl
+*.blg
+*.lof
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+*_.pdf

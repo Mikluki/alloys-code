@@ -1,0 +1,146 @@
+#!/bin/bash
+# VASP Hardware Topology Analyzer
+# Analyzes node hardware and recommends SLURM and VASP parameters
+
+set -euo pipefail
+
+echo "# VASP Hardware Topology Analyzer"
+echo
+
+# Function to extract number from lscpu output
+#!/bin/bash
+# VASP Hardware Topology Analyzer
+# Analyzes node hardware and recommends SLURM and VASP parameters
+
+set -euo pipefail
+
+echo "# VASP Hardware Topology Analyzer"
+echo
+
+# Function to extract number from lscpu output
+extract_number() {
+    echo "$1" | grep -oE '[0-9]+' | head -1
+}
+
+# Get hardware information
+echo "**Getting hardware information...**"
+LSCPU_OUTPUT=$(lscpu)
+
+TOTAL_CPUS=$(extract_number "$(echo "$LSCPU_OUTPUT" | grep '^CPU(s):')")
+THREADS_PER_CORE=$(extract_number "$(echo "$LSCPU_OUTPUT" | grep 'Thread(s) per core:')")
+CORES_PER_SOCKET=$(extract_number "$(echo "$LSCPU_OUTPUT" | grep 'Core(s) per socket:')")
+SOCKETS=$(extract_number "$(echo "$LSCPU_OUTPUT" | grep 'Socket(s):')")
+
+# Calculate derived values
+TOTAL_PHYSICAL_CORES=$((CORES_PER_SOCKET * SOCKETS))
+HYPERTHREADING_ENABLED=$((THREADS_PER_CORE > 1))
+
+echo "Hardware Topology:"
+echo "  Total logical CPUs: $TOTAL_CPUS"
+echo "  Total physical cores: $TOTAL_PHYSICAL_CORES"
+echo "  Sockets: $SOCKETS"
+echo "  Cores per socket: $CORES_PER_SOCKET"
+echo "  Threads per core: $THREADS_PER_CORE"
+echo "  Hyperthreading: $([ $HYPERTHREADING_ENABLED -eq 1 ] && echo "ENABLED" || echo "DISABLED")"
+echo
+
+# Analyze NUMA if available
+echo "**NUMA topology:**"
+if command -v numactl &> /dev/null; then
+    numactl --hardware | grep "node" | head -4
+else
+    echo "$LSCPU_OUTPUT" | grep "NUMA node" | head -4
+fi
+echo
+
+# VASP parameter recommendations
+echo "**VASP NCORE recommendations:**"
+echo "  NCORE should be in range [2, $CORES_PER_SOCKET] (cores per socket)"
+echo "  Or in range [2, $TOTAL_PHYSICAL_CORES] (total cores per node)"
+echo
+
+# Common NCORE values analysis
+echo "Suggested NCORE values based on your hardware:"
+for ncore in 2 4 8 16; do
+    if [ $ncore -le $CORES_PER_SOCKET ]; then
+        echo "  NCORE=$ncore: **✓ Good** (≤ cores per socket)"
+    elif [ $ncore -le $TOTAL_PHYSICAL_CORES ]; then
+        echo "  NCORE=$ncore: *⚠ OK* (≤ total cores, may span sockets)"
+    else
+        echo "  NCORE=$ncore: **✗ Too large** (> total cores)"
+    fi
+done
+echo
+
+# SLURM allocation analysis
+echo "**SLURM allocation analysis:**"
+
+analyze_vasp_job() {
+    local ncore=$1
+    local kpar=$2
+    local needed_processes=$((ncore * kpar))
+    
+    echo "For NCORE=$ncore, KPAR=$kpar (need $needed_processes MPI processes):"
+    
+    if [ $HYPERTHREADING_ENABLED -eq 1 ]; then
+        echo "  With hyperthreading enabled:"
+        echo "    --ntasks=$needed_processes (gives $needed_processes logical CPUs = $((needed_processes / 2)) physical cores)"
+        if [ $((needed_processes / 2)) -lt $needed_processes ]; then
+            echo "    **✗ WILL FAIL** - not enough physical cores for MPI binding"
+        fi
+        echo "    --ntasks=$needed_processes --cpus-per-task=2 (gives $((needed_processes * 2)) logical CPUs = $needed_processes physical cores)"
+        echo "    **✓ RECOMMENDED**"
+        echo "    --ntasks=$needed_processes --hint=nomultithread (disables hyperthreading, uses $needed_processes physical cores)"
+        echo "    **✓ ALTERNATIVE**"
+    else
+        echo "  With hyperthreading disabled:"
+        echo "    --ntasks=$needed_processes (gives $needed_processes physical cores)"
+        echo "    **✓ SHOULD WORK**"
+    fi
+    echo
+}
+
+# Analyze common VASP configurations
+echo "Analysis for common VASP configurations:"
+analyze_vasp_job 8 2  # 16 processes
+analyze_vasp_job 4 4  # 16 processes
+analyze_vasp_job 8 1  # 8 processes
+
+# Command line arguments (optional)
+NCORE=${1:-8}  # Default NCORE=8
+KPAR=${2:-2}   # Default KPAR=2
+
+# Custom configuration analysis
+echo "## Configuration Analysis"
+echo "Analyzing NCORE=$NCORE, KPAR=$KPAR (from arguments or defaults)"
+echo
+analyze_vasp_job "$NCORE" "$KPAR"
+
+# Generate final sbatch command
+needed_processes=$((NCORE * KPAR))
+echo "## RECOMMENDED SBATCH COMMAND"
+
+if [ $HYPERTHREADING_ENABLED -eq 1 ]; then
+    echo "# For NCORE=$NCORE, KPAR=$KPAR:"
+    echo "sbatch --partition=htc --ntasks=$needed_processes --cpus-per-task=2 --time=24:00:00 --wrap=\""
+    echo "source vsp-setup-cpuenv.sh &&"
+    echo "mpirun -np $needed_processes --report-bindings vasp_std\""
+    echo
+    echo "# Alternative (disable hyperthreading):"
+    echo "sbatch --partition=htc --ntasks=$needed_processes --hint=nomultithread --time=24:00:00 --wrap=\""
+    echo "source vsp-setup-cpuenv.sh &&"
+    echo "mpirun -np $needed_processes --report-bindings vasp_std\""
+else
+    echo "# For NCORE=$NCORE, KPAR=$KPAR:"
+    echo "sbatch --partition=htc --ntasks=$needed_processes --time=24:00:00 --wrap=\""
+    echo "source vsp-setup-cpuenv.sh &&"
+    echo "mpirun -np $needed_processes --report-bindings vasp_std\""
+fi
+
+echo
+echo "## Summary"
+echo "Usage: $0 [NCORE] [KPAR]  # e.g., $0 8 2"
+echo "1. Check NCORE is appropriate for your hardware topology"
+echo "2. Use --cpus-per-task=2 on hyperthreaded nodes (or --hint=nomultithread)"
+echo "3. Always test with --report-bindings first"
+echo "4. Monitor performance to validate your choices"

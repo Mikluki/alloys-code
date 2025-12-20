@@ -1,0 +1,341 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    Author mklk
+    Version VASP_CPU_INTEL_CLASSIC
+    Description Clean VASP CPU container with Intel oneAPI HPC Toolkit (classic compilers) and Intel MKL
+    Target_CPU Intel_Xeon_Gold_6140_Skylake_SP_AVX512
+
+%files
+    src/vasp.6.4.3.tgz /opt/vasp.6.4.3.tgz
+    src/makefile.include.cpu.ifort /opt/makefile.include
+    src/l_BaseKit_p_2023.2.0.49397_offline.sh /opt/l_BaseKit_p_2023.2.0.49397_offline.sh
+    src/l_HPCKit_p_2023.2.0.49440_offline.sh /opt/l_HPCKit_p_2023.2.0.49440_offline.sh
+
+%environment
+    # Intel oneAPI environment (avoid setvars.sh for performance)
+    export ONEAPI_ROOT=/opt/intel/oneapi
+    
+    # Intel MKL environment
+    export MKLROOT=/opt/intel/oneapi/mkl/latest
+    export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib/intel64:$LD_LIBRARY_PATH
+    
+    # Intel Compiler environment
+    export INTEL_COMPILER_ROOT=/opt/intel/oneapi/compiler/latest
+    export PATH=/opt/intel/oneapi/compiler/latest/linux/bin/intel64:/opt/intel/oneapi/compiler/latest/bin:$PATH
+    export LD_LIBRARY_PATH=/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin:/opt/intel/oneapi/compiler/latest/linux/lib:/opt/intel/oneapi/compiler/latest/lib:$LD_LIBRARY_PATH
+    
+    # Intel MPI environment
+    export I_MPI_ROOT=/opt/intel/oneapi/mpi/latest
+    export PATH=/opt/intel/oneapi/mpi/latest/bin:$PATH
+    export LD_LIBRARY_PATH=/opt/intel/oneapi/mpi/latest/lib:$LD_LIBRARY_PATH
+    
+    # Intel HDF5 environment
+    export HDF5_ROOT=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+    
+    # VASP paths
+    export PATH=/opt/vasp/vasp.6.4.3/bin:$PATH
+
+    # Compiler settings (Intel classic)
+    export FC=mpiifort
+    export F90=mpiifort
+    export F77=mpiifort
+    export CC=mpiicc
+    export CXX=mpiicpc
+
+    # Intel MPI settings optimized for Skylake-SP
+    export I_MPI_PIN=1
+    export I_MPI_PIN_DOMAIN=auto
+    export I_MPI_FABRICS=shm:ofi
+    
+    # Performance settings for VASP on Skylake-SP
+    export OMP_NUM_THREADS=1
+    export MKL_NUM_THREADS=1
+    export KMP_AFFINITY=compact,1,0
+
+%post
+#!/bin/bash
+    echo "=== Installing system packages ==="
+    apt-get update && apt-get install -y \
+        build-essential \
+        csh \
+        tcsh \
+        curl \
+        wget \
+        tar \
+        rsync \
+        libfftw3-dev \
+        zlib1g-dev \
+        gawk \
+        python3 \
+        python3-pip \
+        vim \
+        git \
+        cmake \
+        unzip \
+        libfabric1 \
+        libnuma-dev \
+        man \
+        file \
+        lsb-release \
+        ca-certificates \
+        gpg \
+        libxcb-dri3-0 \
+        libxcb1 \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+
+    echo "=== Installing Intel oneAPI Base Toolkit (for MKL) ==="
+    chmod +x /opt/l_BaseKit_p_2023.2.0.49397_offline.sh
+    /opt/l_BaseKit_p_2023.2.0.49397_offline.sh -a --silent --eula accept --install-dir /opt/intel/oneapi
+    
+    # Check installation status
+    if [ $? -eq 0 ]; then
+        echo "✓ Intel oneAPI Base Toolkit installation completed"
+    else
+        echo "✗ Intel oneAPI Base Toolkit installation failed"
+        exit 1
+    fi
+
+    echo "=== Installing Intel oneAPI HPC Toolkit (for compilers) ==="
+    chmod +x /opt/l_HPCKit_p_2023.2.0.49440_offline.sh
+    /opt/l_HPCKit_p_2023.2.0.49440_offline.sh -a --silent --eula accept --install-dir /opt/intel/oneapi
+    
+    # Check installation status
+    if [ $? -eq 0 ]; then
+        echo "✓ Intel oneAPI HPC Toolkit installation completed"
+    else
+        echo "✗ Intel oneAPI HPC Toolkit installation failed"
+        exit 1
+    fi
+    
+    # Clean up installers to save space
+    rm /opt/l_BaseKit_p_2023.2.0.49397_offline.sh /opt/l_HPCKit_p_2023.2.0.49440_offline.sh
+
+    echo "=== Verifying Intel oneAPI installation ==="
+    
+    # Check MKL
+    if [ -f "/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_core.so" ]; then
+        echo "✓ Intel MKL installed successfully"
+    else
+        echo "✗ Intel MKL installation failed"
+        find /opt/intel/oneapi -name "libmkl_core.so" 2>/dev/null || echo "MKL not found anywhere"
+        exit 1
+    fi
+    
+    # Check for classic compilers only
+    echo "Checking for Intel classic compilers..."
+    
+    # First, let's see what directories actually exist
+    echo "Intel oneAPI directory structure:"
+    ls -la /opt/intel/oneapi/ 2>/dev/null || echo "oneAPI directory not found"
+    
+    if [ -d "/opt/intel/oneapi/compiler" ]; then
+        echo "Compiler versions available:"
+        ls -la /opt/intel/oneapi/compiler/ 2>/dev/null
+        
+        # Check what's in latest if it exists
+        if [ -d "/opt/intel/oneapi/compiler/latest" ]; then
+            echo "Contents of /opt/intel/oneapi/compiler/latest/:"
+            ls -la /opt/intel/oneapi/compiler/latest/ 2>/dev/null
+            
+            if [ -d "/opt/intel/oneapi/compiler/latest/bin" ]; then
+                echo "Compiler executables in latest/bin:"
+                ls -la /opt/intel/oneapi/compiler/latest/bin/ | grep -E "(ifort|icc|icpc)" || echo "No classic compilers in latest/bin"
+            else
+                echo "[Warning]: /opt/intel/oneapi/compiler/latest/bin/ does not exist"
+            fi
+        else
+            echo "[Warning]: /opt/intel/oneapi/compiler/latest/ does not exist"
+            echo "Looking for version-specific directories..."
+            find /opt/intel/oneapi/compiler -maxdepth 2 -name "bin" -type d 2>/dev/null | head -5
+        fi
+    else
+        echo "[Warning]: /opt/intel/oneapi/compiler directory not found"
+    fi
+    
+    # Try to find compilers anywhere in the installation
+    echo "Searching for classic compilers anywhere in oneAPI installation..."
+    find /opt/intel/oneapi -name "ifort" -type f 2>/dev/null | head -3
+    find /opt/intel/oneapi -name "icc" -type f 2>/dev/null | head -3
+    find /opt/intel/oneapi -name "icpc" -type f 2>/dev/null | head -3
+    
+    # Show warning but dont exit - let container build complete
+    echo "[Warning]: Will skip HDF5 build if classic compilers not found"
+    echo "Container will build successfully for manual inspection"
+    
+    # Check Intel MPI
+    if [ -f "/opt/intel/oneapi/mpi/latest/bin/mpiifort" ]; then
+        echo "✓ Intel MPI (classic wrappers) installed successfully"
+        
+        # Show MPI wrapper availability
+        echo "Available MPI wrappers:"
+        ls -la /opt/intel/oneapi/mpi/latest/bin/ | grep mpi | head -5
+    else
+        echo "✗ Intel MPI installation failed"
+        exit 1
+    fi
+
+    echo "=== Conditional HDF5 build with Intel classic compilers ==="
+    
+    # Set Intel environment for HDF5 build - use correct paths
+    export PATH="/opt/intel/oneapi/compiler/latest/linux/bin/intel64:/opt/intel/oneapi/compiler/latest/bin:/opt/intel/oneapi/mpi/latest/bin:$PATH"
+    export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin:/opt/intel/oneapi/compiler/latest/linux/lib:/opt/intel/oneapi/compiler/latest/lib:/opt/intel/oneapi/mkl/latest/lib/intel64:/opt/intel/oneapi/mpi/latest/lib:$LD_LIBRARY_PATH"
+    
+    # Check if compilers are available before building
+    compilers_available=true
+    for compiler in icc ifort icpc; do
+        if ! which $compiler >/dev/null 2>&1; then
+            echo "[Warning]: $compiler not in PATH"
+            compilers_available=false
+        fi
+    done
+    
+    if [ "$compilers_available" = "true" ]; then
+        echo "All classic compilers found - proceeding with HDF5 build..."
+        
+        cd /tmp
+        rm -f hdf5-*.tar.gz*  # Clean any existing files
+        wget https://support.hdfgroup.org/archive/support/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.22/src/hdf5-1.8.22.tar.gz
+        tar -xzf hdf5-1.8.22.tar.gz
+        cd hdf5-1.8.22
+        
+        # Configure with Intel classic compilers only
+        echo "Configuring HDF5 1.8.22 with Intel classic compilers..."
+        ./configure \
+            --prefix=/opt/hdf5 \
+            --enable-fortran \
+            --enable-shared \
+            CC=icc FC=ifort CXX=icpc
+            
+        if [ $? -eq 0 ]; then
+            echo "Building HDF5..."
+            make -j$(nproc)
+            
+            if [ $? -eq 0 ]; then
+                make install
+                
+                if [ $? -eq 0 ]; then
+                    echo "✓ HDF5 built and installed successfully"
+                else
+                    echo "[Warning]: HDF5 install failed"
+                fi
+            else
+                echo "[Warning]: HDF5 build failed"
+            fi
+        else
+            echo "[Warning]: HDF5 configure failed with Intel classic compilers"
+        fi
+        
+        # Cleanup
+        cd /
+        rm -rf /tmp/hdf5-*
+    else
+        echo "[Warning]: Skipping HDF5 build - classic compilers not available"
+        echo "You can build HDF5 manually after fixing compiler paths"
+        
+        # Create empty HDF5 directory for consistency
+        mkdir -p /opt/hdf5/lib
+        mkdir -p /opt/hdf5/include
+        echo "# HDF5 not built - compilers unavailable" > /opt/hdf5/README
+    fi
+    
+    # Verify HDF5 installation (non-fatal)
+    if [ -f "/opt/hdf5/lib/libhdf5_fortran.so" ]; then
+        echo "✓ HDF5 built and installed successfully"
+        echo "HDF5 components:"
+        ls -la /opt/hdf5/lib/libhdf5* | head -3
+    else
+        echo "⚠ HDF5 not built - compilers not available"
+        echo "This can be fixed manually after resolving compiler paths"
+    fi
+    
+    # Cleanup
+    cd /
+    rm -rf /tmp/hdf5-*
+
+    echo "=== Setting up VASP source ==="
+    mkdir -p /opt/vasp
+    cd /opt/vasp
+    tar -xzf /opt/vasp.6.4.3.tgz
+    
+    # Copy CPU-optimized makefile.include for ifort
+    cp /opt/makefile.include /opt/vasp/vasp.6.4.3/makefile.include
+    
+    # Fix permissions for any user to read/execute
+    chmod -R o+rX /opt/vasp/vasp.6.4.3/
+    
+    # Verify VASP source extraction
+    if [ -d "/opt/vasp/vasp.6.4.3" ] && [ -f "/opt/vasp/vasp.6.4.3/makefile.include" ]; then
+        echo "✓ VASP source extracted and makefile.include copied"
+    else
+        echo "✗ VASP setup failed"
+        exit 1
+    fi
+
+    echo "=== Cleaning up installation files ==="
+    rm -rf /opt/vasp.6.4.3.tgz /opt/makefile.include
+
+    echo "=== Final verification (non-fatal) ==="
+    echo "Intel oneAPI structure:"
+    ls -la /opt/intel/oneapi/ 2>/dev/null || echo "oneAPI directory not accessible"
+    echo ""
+    
+    echo "Environment paths for manual inspection:"
+    echo "PATH will include: /opt/intel/oneapi/compiler/latest/linux/bin/intel64:/opt/intel/oneapi/mpi/latest/bin:/opt/hdf5/bin"
+    echo "LD_LIBRARY_PATH will include: /opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin:/opt/intel/oneapi/mkl/latest/lib/intel64"
+    echo ""
+    
+    echo "Checking for tools (warnings only):"
+    export PATH="/opt/intel/oneapi/compiler/latest/linux/bin/intel64:/opt/intel/oneapi/compiler/latest/bin:/opt/intel/oneapi/mpi/latest/bin:/opt/hdf5/bin:$PATH" 2>/dev/null || true
+    export LD_LIBRARY_PATH="/opt/intel/oneapi/compiler/latest/linux/compiler/lib/intel64_lin:/opt/intel/oneapi/compiler/latest/linux/lib:/opt/intel/oneapi/compiler/latest/lib:/opt/intel/oneapi/mkl/latest/lib/intel64:$LD_LIBRARY_PATH" 2>/dev/null || true
+    
+    for tool in ifort icc icpc mpiifort mpiicc mpiicpc; do
+        if which $tool >/dev/null 2>&1; then
+            echo "✓ $tool ready"
+        else
+            echo "⚠ $tool not found in PATH"
+        fi
+    done
+    
+    echo ""
+    echo "HDF5 status:"
+    if [ -f "/opt/hdf5/lib/libhdf5_fortran.so" ]; then
+        echo "✓ HDF5 built successfully"
+    else
+        echo "⚠ HDF5 not built - check compiler availability"
+    fi
+
+    echo "=== CPU container build completed successfully ==="
+    echo "Target CPU: Intel Xeon Gold 6140 (Skylake-SP with AVX-512)"
+
+%runscript
+    echo "=========================================="
+    echo "  VASP CPU Container (Intel oneAPI)"
+    echo "=========================================="
+    echo ""
+    echo "Components installed:"
+    echo "  ✓ Intel oneAPI Base Toolkit (MKL)"
+    echo "  ✓ Intel oneAPI HPC Toolkit"
+    echo "  ✓ VASP 6.4.3 source ready"
+    echo "  ? HDF5 1.8.22 (if classic compilers available)"
+    echo ""
+    echo "To verify your environment:"
+    echo "  singularity shell container.sif"
+    echo "  # then run: which ifort icc icpc mpiifort"
+    echo ""
+    echo "Target CPU: Intel Xeon Gold 6140 (Skylake-SP + AVX-512)"
+    echo ""
+    echo "To compile VASP (copy to writable location first):"
+    echo "  # Bind mount a working directory:"
+    echo "  singularity exec --bind ./work:/work container.sif bash -c \\"
+    echo "    'cp -r /opt/vasp/vasp.6.4.3 /work/ && cd /work/vasp.6.4.3 && make DEPS=1 -j\$(nproc)'"
+    echo ""
+    echo "VASP source location: /opt/vasp/vasp.6.4.3"
+    echo "Makefile template:    /opt/vasp/vasp.6.4.3/makefile.include"
+    echo ""
+    echo "For debugging: singularity shell --writable-tmpfs container.sif"
+    echo ""

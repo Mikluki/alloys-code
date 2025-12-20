@@ -1,0 +1,163 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    Author mklk
+    Version VASP_GPU_MKL
+    Description VASP container with NVIDIA HPC SDK and Intel MKL
+
+%files
+    src/nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz /opt/nvhpc.tar.gz
+    src/vasp.6.4.2.tgz /opt/vasp.6.4.2.tgz
+    src/makefile.include.gpu /opt/makefile.include
+    src/intel-oneapi-base-toolkit-2025.2.0.592_offline.sh /opt/base-toolkit.sh
+
+%environment
+    # Intel MKL environment (manual setup, avoid setvars.sh)
+    export MKLROOT=/opt/intel/oneapi/mkl/latest
+    export LD_LIBRARY_PATH=/opt/intel/oneapi/mkl/latest/lib:$LD_LIBRARY_PATH
+
+    # NVIDIA HPC SDK paths
+    export NVHPC_ROOT=/opt/nvidia/hpc_sdk/Linux_x86_64/2025
+    export PATH=$NVHPC_ROOT/compilers/bin:$NVHPC_ROOT/comm_libs/12.8/openmpi4/openmpi-4.1.5/bin:$PATH
+    export LD_LIBRARY_PATH=$NVHPC_ROOT/compilers/lib:$NVHPC_ROOT/comm_libs/12.8/openmpi4/openmpi-4.1.5/lib:$NVHPC_ROOT/cuda/12.8/targets/x86_64-linux/lib:$LD_LIBRARY_PATH
+
+    # VASP paths
+    export PATH=/opt/vasp/vasp.6.4.2/bin:$PATH
+
+    # Compiler settings
+    export FC=mpif90
+    export F90=mpif90
+    export F77=mpif77
+    export CC=mpicc
+    export CXX=mpicxx
+
+    # Performance settings
+    export OMP_NUM_THREADS=1
+
+%post
+    #!/bin/bash
+    echo "=== Installing system packages ==="
+    apt-get update && apt-get install -y \
+        build-essential \
+        csh \
+        tcsh \
+        curl \
+        wget \
+        tar \
+        rsync \
+        libfftw3-dev \
+        zlib1g-dev \
+        gawk \
+        python3 \
+        python3-pip \
+        vim \
+        git \
+        cmake \
+        unzip \
+        libnuma-dev \
+        man \
+        file \
+        lsb-release \
+        ca-certificates \
+        gpg \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+
+    echo "=== Cleaning any stale Intel installer state ==="
+    # Kill any stuck installer processes from previous build attempts
+    pkill -f installer || true
+    pkill -f intel-oneapi || true
+    
+    # Remove stale Intel installation directories and cache
+    rm -rf /var/intel/installercache/ || true
+    rm -rf /opt/intel/oneapi/installer/ || true  
+    rm -rf /var/intel/ || true
+    rm -rf /tmp/intel-oneapi* || true
+    
+    # Ensure clean environment for installation
+    echo "✓ Intel installer state cleaned"
+
+    echo "=== [1/3] Installing Intel oneAPI Base Toolkit (offline) ==="
+    chmod +x /opt/base-toolkit.sh
+
+    # Install base toolkit (includes MKL) with improved flags for container environment
+    /opt/base-toolkit.sh -a -c --silent --eula accept --install-dir /opt/intel/oneapi
+
+    # Verify MKL installation
+    if [ -f "/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_core.so" ]; then
+        echo "✓ Intel MKL installed successfully"
+    else
+        echo "✗ Intel MKL installation failed - checking what was installed:"
+        ls -la /opt/intel/oneapi/ 2>/dev/null || echo "No oneapi directory found"
+        exit 1
+    fi
+
+    # Clean up installer and temporary files
+    rm -f /opt/base-toolkit.sh
+    rm -rf /tmp/intel-oneapi* || true
+
+    echo "=== [2/3] Installing NVIDIA HPC SDK ==="
+    cd /opt
+    tar -xzf nvhpc.tar.gz
+    ./nvhpc_2025_253_Linux_x86_64_cuda_12.8/install -silent -prefix /opt/nvidia/hpc_sdk
+    
+    # Verify NVHPC installation
+    if [ -f "/opt/nvidia/hpc_sdk/Linux_x86_64/2025/compilers/bin/nvfortran" ]; then
+        echo "✓ NVIDIA HPC SDK installed successfully"
+    else
+        echo "✗ NVIDIA HPC SDK installation failed"
+        exit 1
+    fi
+
+    echo "=== Verifying MPI installation ==="
+    if [ -f "/opt/nvidia/hpc_sdk/Linux_x86_64/2025/comm_libs/12.8/openmpi4/openmpi-4.1.5/bin/mpirun" ]; then
+        /opt/nvidia/hpc_sdk/Linux_x86_64/2025/comm_libs/12.8/openmpi4/openmpi-4.1.5/bin/mpirun --version
+        echo "✓ mpirun available"
+    else
+        echo "✗ mpirun not found"
+        exit 1
+    fi
+
+    echo "=== [3/3] Setting up VASP source ==="
+    mkdir -p /opt/vasp
+    cd /opt/vasp
+    tar -xzf /opt/vasp.6.4.2.tgz
+    
+    # Copy makefile.include template
+    cp /opt/makefile.include /opt/vasp/vasp.6.4.2/makefile.include
+    
+    # Fix permissions for any user to read/execute
+    chmod -R o+rX /opt/vasp/vasp.6.4.2/
+    
+    # Verify VASP source extraction
+    if [ -d "/opt/vasp/vasp.6.4.2" ] && [ -f "/opt/vasp/vasp.6.4.2/makefile.include" ]; then
+        echo "✓ VASP source extracted and makefile.include copied"
+    else
+        echo "✗ VASP setup failed"
+        exit 1
+    fi
+
+    echo "=== Cleaning up installation files ==="
+    rm -rf /opt/nvhpc* /opt/vasp.6.4.2.tgz /opt/makefile.include
+
+    echo "=== Container build completed successfully ==="
+
+%runscript
+    echo "=========================================="
+    echo "  VASP GPU Container (NVIDIA HPC + MKL)"
+    echo "=========================================="
+    echo ""
+    echo "Environment loaded:"
+    echo "  ✓ NVIDIA HPC SDK 2025"
+    echo "  ✓ Intel oneAPI MKL"
+    echo "  ✓ VASP 6.4.2 source ready"
+    echo ""
+    echo "To compile VASP (copy to writable location first):"
+    echo "  # Bind mount a working directory:"
+    echo "  singularity exec --bind ./work:/work container.sif bash -c \\"
+    echo "    'cp -r /opt/vasp/vasp.6.4.2 /work/ && cd /work/vasp.6.4.2 && make DEPS=1 -j\$(nproc)'"
+    echo ""
+    echo "VASP source location: /opt/vasp/vasp.6.4.2"
+    echo "Makefile template:    /opt/vasp/vasp.6.4.2/makefile.include"
+    echo ""

@@ -1,0 +1,24 @@
+ALGO: FAST
+EDIFF = 1d-5
+ENCUT: 520 # get largest encut x 1.3 factor
+GGA_COMPAT = .FALSE.
+
+IBRION = -1 # inonic opt. IBRION=0 for MD. [orig=2]
+# ISIF: 3 # set according to realxation task
+ISMEAR=2 
+SIGMA=0.1
+
+ISPIN = 2
+LASPH = TRUE
+LREAL: AUTO
+
+LWAVE  = .FALSE.
+LCHARG = .FALSE.
+NELM = 320
+
+# NSW = 99;
+
+PREC = ACCURATE
+NELMIN = 4
+  
+LREAL= Auto # "FALSE" if number_of_atoms < 8 in a cell. Else "AUTO"

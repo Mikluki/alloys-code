@@ -1,0 +1,197 @@
+#!/bin/bash
+
+# Script to check for exact filename matches across directories
+# Usage: ./script.sh [-I] [-l] [-o file] [-r] [-0] <dirs_or_pattern> <filename>
+
+show_usage() {
+    echo "Usage: $0 [-I] [-l] [-o file] [-r] <directories_or_pattern> <filename>"
+    echo "  -I: Case-sensitive search (default is case-insensitive)"
+    echo "  -l: List directories that don't have the target file"
+    echo "  -o <file>: Save paths to specified file (default: found.txt)"
+    echo "  -r: Use relative paths in output (default is absolute)"
+    echo ""
+    echo "Examples:"
+    echo "  $0 '/projects/*/' OUTCAR        # Check & save to found.txt"
+    echo "  $0 -o results.txt /projects/*/ OUTCAR  # Save to results.txt"
+    echo "  $0 -o paths.txt -r dir*/ config.yaml # Save relative paths"
+    echo "  $0 -l /projects/calc_*/ config.yaml  # List missing dirs"
+    echo ""
+    echo "Using saved paths:"
+    echo "  cat found.txt | xargs -I {} cp -r {} /backup/"
+    echo "  cat found.txt | xargs -I {} mv {} /archive/"
+    echo "  parallel -a found.txt rsync -av {} /remote/"
+}
+
+check_files_in_dirs() {
+    # Initialize variables
+    local case_sensitive=false
+    local list_missing=false
+    local output_file="found.txt"
+    local use_relative=false
+    local args=()
+
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -I)
+                case_sensitive=true
+                shift
+                ;;
+            -l)
+                list_missing=true
+                shift
+                ;;
+            -o|--output)
+                if [[ -z "$2" || "$2" == -* ]]; then
+                    echo "Error: -o requires a filename argument"
+                    show_usage
+                    return 1
+                fi
+                output_file="$2"
+                
+                # Validate output file is not a directory or pattern
+                if [[ -d "$output_file" ]]; then
+                    echo "Error: Output file '$output_file' is a directory"
+                    echo "Did you forget to quote your glob pattern?"
+                    echo "Usage: $0 -o output.txt 'pattern/*/' filename"
+                    return 1
+                fi
+                if [[ "$output_file" == */ || "$output_file" == *\* ]]; then
+                    echo "Error: Output file '$output_file' looks like a directory pattern"
+                    echo "Did you mean to search these directories instead?"
+                    echo "Usage: $0 -o output.txt 'pattern/*/' filename"
+                    echo "   or: $0 'pattern/*/' filename  (saves to found.txt)"
+                    return 1
+                fi
+                
+                shift 2
+                ;;
+            -r|--relative)
+                use_relative=true
+                shift
+                ;;
+            -h|--help)
+                show_usage
+                return 0
+                ;;
+            -*)
+                echo "Error: Unknown option $1"
+                show_usage
+                return 1
+                ;;
+            *)
+                args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # Need at least 2 arguments: directory(ies) and filename
+    if [[ ${#args[@]} -lt 2 ]]; then
+        echo "Error: Missing required arguments"
+        show_usage
+        return 1
+    fi
+
+    # Last argument is filename, all others are directories (or pattern to expand)
+    local target_filename="${args[-1]}"
+    local dir_args=("${args[@]:0:${#args[@]}-1}")
+    
+    # Expand any patterns and collect all directories
+    local target_dirs=()
+    for arg in "${dir_args[@]}"; do
+        # Expand the argument (works for both patterns and literal paths)
+        expanded=($arg)
+        target_dirs+=("${expanded[@]}")
+    done
+
+    # Filter to only actual directories
+    local valid_dirs=()
+    for dir in "${target_dirs[@]}"; do
+        if [[ -d "$dir" && -r "$dir" ]]; then
+            valid_dirs+=("$dir")
+        fi
+    done
+
+    local total_dirs=${#valid_dirs[@]}
+    if [[ $total_dirs -eq 0 ]]; then
+        echo "No accessible directories found"
+        return 0
+    fi
+
+    # Initialize counters and arrays
+    local dirs_with_file=0
+    local missing_dirs=()
+    local found_dirs=()
+
+    # Process each directory
+    local current_dir=0
+    for dir in "${valid_dirs[@]}"; do
+        current_dir=$((current_dir + 1))
+        dir_name=$(basename "$dir")
+        
+        printf "\rChecking directory %d/%d: %-30s" "$current_dir" "$total_dirs" "$dir_name"
+        
+        # Check if target file exists
+        local found_file=false
+        for filepath in "$dir"/*; do
+            [[ ! -f "$filepath" ]] && continue
+            
+            local current_filename=$(basename "$filepath")
+            
+            if [[ "$case_sensitive" == true ]]; then
+                [[ "$current_filename" == "$target_filename" ]] && found_file=true && break
+            else
+                [[ "${current_filename,,}" == "${target_filename,,}" ]] && found_file=true && break
+            fi
+        done
+        
+        if [[ "$found_file" == true ]]; then
+            dirs_with_file=$((dirs_with_file + 1))
+            
+            # Store the path for output
+            if [[ "$use_relative" == true ]]; then
+                found_dirs+=("$dir")
+            else
+                # Convert to absolute path
+                found_dirs+=("$(cd "$dir" && pwd)")
+            fi
+        else
+            missing_dirs+=("$dir_name")
+        fi
+    done
+
+    # Clear progress line and show results
+    printf "\r%80s\r" ""
+    
+    local percentage=$(awk "BEGIN {printf \"%.1f\", ($dirs_with_file/$total_dirs)*100}")
+    local search_type="case-insensitive"
+    [[ "$case_sensitive" == true ]] && search_type="case-sensitive"
+
+    echo "$dirs_with_file out of $total_dirs directories ($percentage%) contain file '$target_filename' ($search_type)"
+
+    # Write found directories to output file
+    > "$output_file"  # Clear/create file
+    local written=0
+    for found_dir in "${found_dirs[@]}"; do
+        echo "$found_dir" >> "$output_file"
+        written=$((written + 1))
+    done
+    
+    local path_type="absolute"
+    [[ "$use_relative" == true ]] && path_type="relative"
+    
+    echo "Saved $written $path_type paths to '$output_file'"
+
+    # List missing directories if requested
+    if [[ "$list_missing" == true && ${#missing_dirs[@]} -gt 0 ]]; then
+        echo ""
+        echo "Directories missing the target file:"
+        for missing_dir in "${missing_dirs[@]}"; do
+            echo "  $missing_dir"
+        done
+    fi
+}
+
+# Call the function with all script arguments
+check_files_in_dirs "$@"

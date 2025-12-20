@@ -1,0 +1,42 @@
+# Energy Sources Configuration
+# Neural network and DFT calculator definitions with venv paths and types
+
+energy_sources:
+  # Neural Network Models
+  ESEN_30M_OAM:
+    venv: ~/.venvs/uv312eSEN
+    type: nn
+
+  MACE_MPA_0:
+    venv: ~/.venvs/uv312mace
+    type: nn
+
+  SEVENNET:
+    venv: ~/.venvs/uv312SevenNet
+    type: nn
+
+  ORBV3:
+    venv: ~/.venvs/uv312ORBv3
+    type: nn
+
+  # CUDA ONLY
+  NEQUIP:
+    venv: ~/.venvs/uv312nequip
+    type: nn
+
+  ALLEGRO:
+    venv: ~/.venvs/uv312allegro
+    type: nn
+
+  GRACE_2L_OAM_L:
+    venv: ~/.venvs/uv312grace
+    type: nn
+
+  DPA31:
+    venv: ~/.venvs/uv312dpa31
+    type: nn
+
+  # DFT
+  VASP:
+    venv: null
+    type: dft

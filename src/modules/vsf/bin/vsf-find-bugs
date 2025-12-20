@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Simple shim: runs a Python script located relative to this file.
+
+set -euo pipefail
+
+# Python script path relative to this shim
+REL_PATH="./grep-bugs/vsf-find-bugs.py"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET="$SCRIPT_DIR/$REL_PATH"
+
+if [ ! -f "$TARGET" ]; then
+  echo "shim error: python script not found: $TARGET" >&2
+  exit 1
+fi
+
+exec python3 "$TARGET" "$@"

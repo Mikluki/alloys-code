@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vsf"
+version = "0.1.0"
+description = "A package for structure generation and manipulation"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+dependencies = [
+    "mp-api",
+    "pymatgen",
+    "ase",
+    "freud-analysis"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "isort",
+    "mypy",
+]
+
+[tool.setuptools]
+packages = ["vsf"]
+
+[tool.setuptools.package-data]
+"vsf.generation.blueprints" = ["*.POSCAR"]
+vsf = [
+    "vasp/input/kpoints/java_resources/GridGenerator.jar",
+    "vasp/input/kpoints/java_resources/getKPoints",
+    "vasp/input/kpoints/java_resources/minDistanceCollections/*",
+]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true

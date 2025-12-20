@@ -1,0 +1,38 @@
+#!/bin/bash
+
+merge_files_by_prefix() {
+    local prefix="$1"
+    local output_file="$2"
+    local dir="${3:-.}"  # Default to current directory
+    
+    if [[ -z "$prefix" || -z "$output_file" ]]; then
+        echo "Usage: merge_files_by_prefix <prefix> <output_file> [directory]"
+        echo "Example: merge_files_by_prefix used_seeds all_used_seeds.txt"
+        echo "Example: merge_files_by_prefix failed_seeds all_failed.txt /path/to/structures"
+        return 1
+    fi
+    
+    if [[ ! -d "$dir" ]]; then
+        echo "Error: Directory '$dir' does not exist"
+        return 1
+    fi
+    
+    # Find files matching prefix and merge them
+    local matching_files=($(find "$dir" -maxdepth 1 -name "${prefix}*" -type f | sort))
+    
+    if [[ ${#matching_files[@]} -eq 0 ]]; then
+        echo "No files found matching prefix '$prefix' in directory '$dir'"
+        return 1
+    fi
+    
+    # Merge files
+    > "$output_file"  # Create/truncate output file
+    for file in "${matching_files[@]}"; do
+        cat "$file" >> "$output_file"
+    done
+    
+    echo "Merged ${#matching_files[@]} files into '$output_file'"
+    echo "Files merged: ${matching_files[*]##*/}"  # Show just filenames
+}
+
+merge_files_by_prefix "$@"

@@ -1,0 +1,137 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    Author mklk
+    Version DEBUG_INTEL_LIBS
+    Description Debug container to find Intel library locations
+
+%files
+    src/l_BaseKit_p_2023.2.0.49397_offline.sh /opt/l_BaseKit_p_2023.2.0.49397_offline.sh
+    src/l_HPCKit_p_2023.2.0.49440_offline.sh /opt/l_HPCKit_p_2023.2.0.49440_offline.sh
+
+%post
+#!/bin/bash
+    echo "=== Installing minimal system packages ==="
+    apt-get update && apt-get install -y \
+        build-essential \
+        wget \
+        tar \
+        ca-certificates \
+        libxcb-dri3-0 libxcb1 \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+        
+
+    echo "=== Installing Intel oneAPI Base Toolkit (for MKL) ==="
+    chmod +x /opt/l_BaseKit_p_2023.2.0.49397_offline.sh
+    /opt/l_BaseKit_p_2023.2.0.49397_offline.sh -a --silent --eula accept --install-dir /opt/intel/oneapi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Intel oneAPI Base Toolkit installation completed"
+    else
+        echo "✗ Intel oneAPI Base Toolkit installation failed"
+        exit 1
+    fi
+
+    echo "=== Installing Intel oneAPI HPC Toolkit (for compilers) ==="
+    chmod +x /opt/l_HPCKit_p_2023.2.0.49440_offline.sh
+    /opt/l_HPCKit_p_2023.2.0.49440_offline.sh -a --silent --eula accept --install-dir /opt/intel/oneapi
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Intel oneAPI HPC Toolkit installation completed"
+    else
+        echo "✗ Intel oneAPI HPC Toolkit installation failed"
+        exit 1
+    fi
+    
+    # Clean up installers
+    rm /opt/l_BaseKit_p_2023.2.0.49397_offline.sh /opt/l_HPCKit_p_2023.2.0.49440_offline.sh
+
+    echo "=============================================="
+    echo "=== DEBUGGING INTEL LIBRARY LOCATIONS ==="
+    echo "=============================================="
+    
+    echo ""
+    echo "1. Intel oneAPI directory structure:"
+    ls -la /opt/intel/oneapi/
+    
+    echo ""
+    echo "2. Compiler directory structure:"
+    ls -la /opt/intel/oneapi/compiler/
+    
+    echo ""
+    echo "3. Compiler latest symlink points to:"
+    ls -la /opt/intel/oneapi/compiler/latest
+    
+    echo ""
+    echo "4. Contents of compiler/latest/linux/lib/:"
+    if [ -d "/opt/intel/oneapi/compiler/latest/linux/lib" ]; then
+        ls -la /opt/intel/oneapi/compiler/latest/linux/lib/ | head -20
+    else
+        echo "Directory /opt/intel/oneapi/compiler/latest/linux/lib/ does not exist"
+    fi
+    
+    echo ""
+    echo "5. Contents of compiler/latest/lib/:"
+    if [ -d "/opt/intel/oneapi/compiler/latest/lib" ]; then
+        ls -la /opt/intel/oneapi/compiler/latest/lib/ | head -20
+    else
+        echo "Directory /opt/intel/oneapi/compiler/latest/lib/ does not exist"
+    fi
+    
+    echo ""
+    echo "6. Search for libimf.so anywhere in Intel installation:"
+    find /opt/intel/oneapi -name "libimf.so*" -type f 2>/dev/null || echo "libimf.so not found"
+    
+    echo ""
+    echo "7. Search for other Intel math libraries:"
+    find /opt/intel/oneapi -name "libmkl*.so" -type f 2>/dev/null | head -5
+    find /opt/intel/oneapi -name "libipgo*.so" -type f 2>/dev/null | head -3
+    find /opt/intel/oneapi -name "libirc*.so" -type f 2>/dev/null | head -3
+    
+    echo ""
+    echo "8. All lib directories in Intel installation:"
+    find /opt/intel/oneapi -type d -name "lib*" 2>/dev/null | head -15
+    
+    echo ""
+    echo "9. Test compiler paths:"
+    export PATH="/opt/intel/oneapi/compiler/latest/linux/bin/intel64:/opt/intel/oneapi/compiler/latest/bin:$PATH"
+    
+    echo "   - ifort location: $(which ifort 2>/dev/null || echo 'not found')"
+    echo "   - icc location: $(which icc 2>/dev/null || echo 'not found')"
+    echo "   - icpc location: $(which icpc 2>/dev/null || echo 'not found')"
+    
+    if which ifort >/dev/null 2>&1; then
+        echo "   - ifort version:"
+        ifort --version | head -2 || echo "Version check failed"
+        
+        echo "   - ifort library search paths:"
+        ifort -v 2>&1 | grep -E "(lib|LIBRARY)" || echo "No library paths shown"
+    fi
+    
+    echo ""
+    echo "10. Recommended LD_LIBRARY_PATH for HDF5 build:"
+    echo "    Current common Intel library directories found:"
+    for libdir in /opt/intel/oneapi/compiler/latest/linux/lib/intel64 \
+                  /opt/intel/oneapi/compiler/latest/linux/lib \
+                  /opt/intel/oneapi/compiler/latest/lib \
+                  /opt/intel/oneapi/mkl/latest/lib/intel64 \
+                  /opt/intel/oneapi/mkl/latest/lib; do
+        if [ -d "$libdir" ]; then
+            echo "    ✓ $libdir (exists)"
+        else
+            echo "    ✗ $libdir (missing)"
+        fi
+    done
+    
+    echo ""
+    echo "=============================================="
+    echo "=== DEBUG CONTAINER BUILD COMPLETED ==="
+    echo "=============================================="
+    echo "Now we know where Intel libraries are located!"
+    echo "Use this info to fix LD_LIBRARY_PATH in main container."
+
+%runscript
+    echo "This is a debug container to locate Intel libraries."
+    echo "Check the build log above for library locations."

@@ -1,0 +1,394 @@
+#!/bin/bash
+
+# vsf-gnn-clone - Create lightweight clone with POSCARs and JSONs for GNN processing
+# Usage: vsf-gnn-clone /path/to/structures
+# Usage: vsf-gnn-clone cat-test/*/
+
+gnn_clone() {
+    set -euo pipefail
+
+    # List of JSON files to ignore during cloning
+    local IGNORED_JSON_FILES=("energy.json" "relaxation_history.json")
+
+    # Colors for output
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m' # No Color
+
+    # Function to print colored output
+    print_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+    print_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+    print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+    print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+
+    # Check if fd is available
+    if ! command -v fd >/dev/null 2>&1; then
+        print_error "'fd' command not found. Please install fd-find."
+        print_error "Ubuntu/Debian: sudo apt install fd-find"
+        print_error "             : cargo install fd-find"
+        print_error "macOS: brew install fd"
+        return 1
+    fi
+
+    # Function to log messages
+    log_message() {
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    }
+
+    # Function to check if a file should be ignored
+    is_ignored() {
+        local filename="$1"
+        local ignored_file
+        for ignored_file in "${IGNORED_JSON_FILES[@]}"; do
+            if [[ "$filename" == "$ignored_file" ]]; then
+                return 0  # File is ignored
+            fi
+        done
+        return 1  # File is not ignored
+    }
+
+    # Function to process a single directory
+    process_directory() {
+        local INPUT_DIR="$1"
+        local CLONE_MODE="$2"
+        local OUTCAR_MODE="$3"
+        local OUTPUT_DIR="${INPUT_DIR}-gnncp"
+        LOG_FILE="x${OUTPUT_DIR}.log"
+
+        # Validate input directory
+        if [[ ! -d "$INPUT_DIR" ]]; then
+            print_error "Input directory does not exist: $INPUT_DIR"
+            return 1
+        fi
+
+        print_info "Processing: $INPUT_DIR"
+        print_info "Output: $OUTPUT_DIR"
+        print_info "Log: $LOG_FILE"
+        
+        if [[ "$CLONE_MODE" == "false" ]]; then
+            print_warn "DRY RUN MODE - No files will be created"
+        fi
+
+        # Check if output directory exists (only relevant in clone mode)
+        if [[ "$CLONE_MODE" == "true" ]] && [[ -d "$OUTPUT_DIR" ]]; then
+            print_warn "Output directory already exists: $OUTPUT_DIR"
+            read -p "Overwrite existing directory? (y/n): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Skipping $INPUT_DIR"
+                return 0
+            fi
+            print_info "Removing existing directory..."
+            rm -rf "$OUTPUT_DIR"
+        fi
+
+        # Initialize log file
+        if [[ "$CLONE_MODE" == "false" ]]; then
+            echo "GNN Clone Log [DRY RUN] - $(date)" > "$LOG_FILE"
+            log_message "[DRY RUN] Starting clone operation: $INPUT_DIR -> $OUTPUT_DIR"
+        else
+            echo "GNN Clone Log - $(date)" > "$LOG_FILE"
+            log_message "Starting clone operation: $INPUT_DIR -> $OUTPUT_DIR"
+        fi
+        log_message "Using fd for file operations (ignoring .gitignore)"
+        log_message "Ignoring JSON files: ${IGNORED_JSON_FILES[*]}"
+        if [[ "$OUTCAR_MODE" == "true" ]]; then
+            log_message "OUTCAR cloning enabled"
+        fi
+
+        # Create output directory (only in clone mode)
+        if [[ "$CLONE_MODE" == "true" ]]; then
+            mkdir -p "$OUTPUT_DIR"
+            log_message "Created output directory: $OUTPUT_DIR"
+        else
+            log_message "[DRY RUN] Would create output directory: $OUTPUT_DIR"
+        fi
+
+        # Counters
+        local dir_count=0
+        local poscar_count=0
+        local json_count=0
+        local json_ignored_count=0
+        local outcar_count=0
+        local outcar_not_found_count=0
+        local missing_poscar_count=0
+        local missing_json_count=0
+
+        print_info "Scanning for structure directories..."
+
+        # Find all subdirectories (ignore .gitignore)
+        local subdirs
+        mapfile -t subdirs < <(fd -t d -I . "$INPUT_DIR")
+
+        print_info "Found ${#subdirs[@]} directories to process"
+        
+        # Debug: show what directories were found
+        print_info "DEBUG: Directories found by fd:"
+        for dir in "${subdirs[@]}"; do
+            echo "  $dir"
+        done
+
+        # Process each subdirectory
+        for subdir in "${subdirs[@]}"; do
+            # Skip if it's the input directory itself
+            if [[ "$subdir" == "$INPUT_DIR" ]]; then
+                continue
+            fi
+            
+            # Calculate relative path and debug
+            local rel_path="${subdir#$INPUT_DIR}"
+            rel_path="${rel_path#/}"  # Remove leading slash if present
+            
+            # Skip if rel_path is empty (shouldn't happen but safety check)
+            if [[ -z "$rel_path" ]]; then
+                echo "DEBUG: Skipping directory with empty rel_path: $subdir"
+                log_message "DEBUG: Skipping directory with empty rel_path: $subdir"
+                continue
+            fi
+            
+            echo "DEBUG: Processing subdir: $subdir -> rel_path: $rel_path"
+            log_message "Processing subdir: $subdir -> rel_path: $rel_path"
+            
+            # Check for POSCAR first
+            local poscar_path="$subdir/POSCAR"
+            if [[ -f "$poscar_path" ]]; then
+                # This is a structure directory - create output and copy files
+                local target_dir="$OUTPUT_DIR/$rel_path"
+                
+                if [[ "$CLONE_MODE" == "true" ]]; then
+                    mkdir -p "$target_dir"
+                    cp "$poscar_path" "$target_dir/"
+                    print_info "Copied POSCAR from: $rel_path"
+                    log_message "Copied POSCAR: $rel_path"
+                else
+                    print_info "[DRY RUN] Would copy POSCAR from: $rel_path"
+                    log_message "[DRY RUN] Would copy POSCAR: $rel_path"
+                fi
+                
+                ((dir_count++))
+                ((poscar_count++))
+                
+                # Check for JSON files (ignore .gitignore)
+                local json_found=false
+                local json_files
+                mapfile -t json_files < <(fd -e json -d 1 -I . "$subdir")
+                
+                for json_file in "${json_files[@]}"; do
+                    if [[ -f "$json_file" ]]; then
+                        local json_basename=$(basename "$json_file")
+                        
+                        # Check if this JSON should be ignored
+                        if is_ignored "$json_basename"; then
+                            if [[ "$CLONE_MODE" == "false" ]]; then
+                                print_info "[DRY RUN] Would ignore JSON: $rel_path/$json_basename"
+                                log_message "[DRY RUN] Would ignore JSON: $rel_path/$json_basename"
+                            else
+                                print_info "Ignored JSON: $rel_path/$json_basename"
+                                log_message "Ignored JSON: $rel_path/$json_basename"
+                            fi
+                            ((json_ignored_count++))
+                            continue
+                        fi
+                        
+                        if [[ "$CLONE_MODE" == "true" ]]; then
+                            cp "$json_file" "$target_dir/"
+                            print_info "Copied JSON: $rel_path/$json_basename"
+                            log_message "Copied JSON: $rel_path/$json_basename"
+                        else
+                            print_info "[DRY RUN] Would copy JSON: $rel_path/$json_basename"
+                            log_message "[DRY RUN] Would copy JSON: $rel_path/$json_basename"
+                        fi
+                        
+                        ((json_count++))
+                        json_found=true
+                    fi
+                done
+                
+                # Warn if no JSON found but POSCAR exists
+                if [[ "$json_found" == false ]]; then
+                    print_warn "No JSON files found in: $rel_path"
+                    log_message "Warning: No JSON files in $rel_path"
+                    ((missing_json_count++))
+                fi
+
+                # Check for OUTCAR if enabled
+                if [[ "$OUTCAR_MODE" == "true" ]]; then
+                    local outcar_path="$subdir/OUTCAR"
+                    if [[ -f "$outcar_path" ]]; then
+                        if [[ "$CLONE_MODE" == "true" ]]; then
+                            cp "$outcar_path" "$target_dir/"
+                            print_info "Copied OUTCAR: $rel_path"
+                            log_message "Copied OUTCAR: $rel_path"
+                        else
+                            print_info "[DRY RUN] Would copy OUTCAR: $rel_path"
+                            log_message "[DRY RUN] Would copy OUTCAR: $rel_path"
+                        fi
+                        ((outcar_count++))
+                    else
+                        print_warn "OUTCAR not found in: $rel_path"
+                        log_message "Warning: OUTCAR not found in $rel_path"
+                        ((outcar_not_found_count++))
+                    fi
+                fi
+            else
+                # No POSCAR - just skip silently (not a structure directory)
+                echo "DEBUG: No POSCAR in $rel_path - skipping"
+                log_message "DEBUG: No POSCAR in $rel_path - skipping"
+            fi
+        done
+
+        # Print summary for this directory
+        if [[ "$CLONE_MODE" == "false" ]]; then
+            print_success "[DRY RUN] Clone simulation completed for: $(basename "$INPUT_DIR")"
+        else
+            print_success "Clone operation completed for: $(basename "$INPUT_DIR")"
+        fi
+        echo
+        print_info "=== SUMMARY for $(basename "$INPUT_DIR") ==="
+        if [[ "$CLONE_MODE" == "false" ]]; then
+            print_info "Directories that would be created: $dir_count"
+            print_info "POSCARs that would be copied: $poscar_count"
+            print_info "JSON files that would be copied: $json_count"
+            print_info "JSON files that would be ignored: $json_ignored_count"
+        else
+            print_info "Directories created: $dir_count"
+            print_info "POSCARs copied: $poscar_count"
+            print_info "JSON files copied: $json_count"
+            print_info "JSON files ignored: $json_ignored_count"
+        fi
+
+        if [[ "$OUTCAR_MODE" == "true" ]]; then
+            if [[ "$CLONE_MODE" == "false" ]]; then
+                print_info "OUTCARs that would be copied: $outcar_count"
+            else
+                print_info "OUTCARs copied: $outcar_count"
+            fi
+            if [[ $outcar_not_found_count -gt 0 ]]; then
+                print_warn "Directories missing OUTCAR: $outcar_not_found_count"
+            fi
+        fi
+
+        if [[ $missing_json_count -gt 0 ]]; then
+            print_warn "Directories missing JSON: $missing_json_count"
+        fi
+
+        if [[ $missing_poscar_count -gt 0 ]]; then
+            print_error "Directories missing POSCAR: $missing_poscar_count"
+        fi
+
+        # Log final summary
+        if [[ "$CLONE_MODE" == "false" ]]; then
+            log_message "[DRY RUN] Clone simulation - Dirs: $dir_count, POSCARs: $poscar_count, JSONs: $json_count, Ignored: $json_ignored_count"
+        else
+            log_message "Clone completed - Dirs: $dir_count, POSCARs: $poscar_count, JSONs: $json_count, Ignored: $json_ignored_count"
+        fi
+        if [[ "$OUTCAR_MODE" == "true" ]]; then
+            log_message "OUTCARs: $outcar_count, Missing: $outcar_not_found_count"
+        fi
+        log_message "Missing - POSCARs: $missing_poscar_count, JSONs: $missing_json_count"
+
+        print_info "Log written to: $LOG_FILE"
+        if [[ "$CLONE_MODE" == "false" ]]; then
+            print_success "[DRY RUN] Simulation complete - use -c or --clone to actually clone"
+        else
+            print_success "Ready for GNN processing: $OUTPUT_DIR"
+        fi
+        echo "----------------------------------------"
+
+        return 0
+    }
+
+    # Check arguments
+    if [[ $# -eq 0 ]]; then
+        print_error "Usage: $0 [-c|--clone] [--with-outcar] <directory1> [directory2] ..."
+        print_error "Example: $0 cat-test                  # Dry run (default)"
+        print_error "Example: $0 --clone cat-test          # Actually clone"
+        print_error "Example: $0 --clone --with-outcar cat-test/*/"
+        exit 1
+    fi
+
+    # Parse flags
+    local CLONE_MODE=false
+    local OUTCAR_MODE=false
+    local args=()
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -c|--clone)
+                CLONE_MODE=true
+                shift
+                ;;
+            --with-outcar)
+                OUTCAR_MODE=true
+                shift
+                ;;
+            *)
+                args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # Check if we have directories to process
+    if [[ ${#args[@]} -eq 0 ]]; then
+        print_error "No directories specified"
+        print_error "Usage: $0 [-c|--clone] [--with-outcar] <directory1> [directory2] ..."
+        exit 1
+    fi
+
+    print_info "GNN Clone Script Starting"
+    if [[ "$CLONE_MODE" == "false" ]]; then
+        print_warn "Running in DRY RUN mode (default) - no files will be created"
+        print_warn "Use -c or --clone flag to actually clone files"
+    else
+        print_info "Running in CLONE mode - files will be created"
+    fi
+    if [[ "$OUTCAR_MODE" == "true" ]]; then
+        print_info "OUTCAR cloning enabled"
+    fi
+    print_info "Processing ${#args[@]} directories"
+    print_info "Ignoring JSON files: ${IGNORED_JSON_FILES[*]}"
+
+    # Global counters
+    local total_success=0
+    local total_failed=0
+
+    # Process each directory argument
+    for dir in "${args[@]}"; do
+        # Remove trailing slash if present
+        dir="${dir%/}"
+        
+        if process_directory "$dir" "$CLONE_MODE" "$OUTCAR_MODE"; then
+            ((total_success++))
+        else
+            ((total_failed++))
+            print_error "Failed to process: $dir"
+        fi
+    done
+
+    # Final summary
+    echo
+    print_info "=== FINAL SUMMARY ==="
+    if [[ "$CLONE_MODE" == "false" ]]; then
+        print_success "[DRY RUN] Successfully simulated: $total_success directories"
+    else
+        print_success "Successfully processed: $total_success directories"
+    fi
+    if [[ $total_failed -gt 0 ]]; then
+        print_error "Failed to process: $total_failed directories"
+    fi
+
+    if [[ $total_failed -eq 0 ]]; then
+        if [[ "$CLONE_MODE" == "false" ]]; then
+            print_success "[DRY RUN] All directories would be processed successfully!"
+            print_info "Use -c or --clone flag to actually clone files"
+        else
+            print_success "All directories processed successfully!"
+        fi
+    fi
+}
+
+# Execute function with all arguments
+gnn_clone "$@"

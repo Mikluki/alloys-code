@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# Check if required arguments are provided
+if [ $# -ne 3 ]; then
+    echo "Usage: $0 <base_directory> <parameter> <value>"
+    echo "Example: $0 /path/to/your/base_dir ALGO Normal"
+    echo "Example: $0 /path/to/your/base_dir NSW 100"
+    exit 1
+fi
+
+# Get arguments from command line
+base_dir="$1"
+parameter="$2"
+value="$3"
+
+# Check if the provided directory exists
+if [ ! -d "$base_dir" ]; then
+    echo "Error: Directory '$base_dir' does not exist."
+    exit 1
+fi
+
+echo "Searching for directories ending with '_' in $base_dir..."
+echo "Will set $parameter = $value in all INCAR files"
+
+# Find all directories ending with "_" in the base directory
+found_dirs=0
+modified_files=0
+
+for dir in $(find "$base_dir" -type d -name "*_"); do
+    # Look for INCAR file in each directory
+    incar_file="$dir/INCAR"
+    
+    if [ -f "$incar_file" ]; then
+        found_dirs=$((found_dirs + 1))
+        echo "Processing $incar_file"
+        
+        # Create a backup
+        cp "$incar_file" "$incar_file.bak"
+        
+        # Check if parameter already exists in the file
+        if grep -q "^\s*$parameter\s*=" "$incar_file"; then
+            # Parameter exists, replace it
+            sed -i "s/^\s*$parameter\s*=.*/$parameter = $value/g" "$incar_file"
+            echo "  Updated $parameter = $value"
+        else
+            # Parameter doesn't exist, add it at the end of the file
+            echo "$parameter = $value" >> "$incar_file"
+            echo "  Added $parameter = $value"
+        fi
+        
+        # Verify the change
+        if grep -q "$parameter = $value" "$incar_file"; then
+            modified_files=$((modified_files + 1))
+        else
+            echo "  Warning: Failed to set $parameter = $value in $incar_file"
+        fi
+    else
+        echo "No INCAR file found in $dir"
+    fi
+done
+
+if [ $found_dirs -eq 0 ]; then
+    echo "No directories ending with '_' containing INCAR files were found."
+else
+    echo "Processing complete! Found $found_dirs directories with INCAR files."
+    echo "Successfully modified $modified_files INCAR files."
+    echo "Backup files with .bak extension were created."
+    echo "To remove backup files, run: find \"$base_dir\" -name \"INCAR.bak\" -delete"
+fi

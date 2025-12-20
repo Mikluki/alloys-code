@@ -1,0 +1,120 @@
+# Default VASP settings for calculations in the Materials Project.
+# Reasonably robust. Use this if you intend to combine your calculated data
+# with Materials Project data for analysis.
+PARENT: VASPIncarBase_v2025.3.10
+INCAR:
+  ALGO: FAST # elctron opt
+  EDIFF_PER_ATOM: 1.0e-05 # [orig=5.0e-05]
+  ENCUT: 520 # dynamically parse from potcars the largest and mult by x 1.3
+  GGA_COMPAT: false # support for old pseudos
+  IBRION: -1 # inonic opt. IBRION=0 for MD. [orig=2]
+  # ISIF: 3 # set according to realxation task
+  ISMEAR: 1 # [orig=-5]
+  SIGMA: 0.1 # [orig=0.05]
+  ISPIN: 2
+  LASPH: true
+  LREAL: AUTO # "FALSE" if number_of_atoms < 8 in a cell. Else "AUTO"
+  LCHARG: false
+  LWAVE: false
+  NELM: 60 [mp=320, vasp=60]
+  NCORE: 2
+  # NSW: 99 # opt param for ionic systems
+  PREC: Accurate
+  NELMIN: 4
+KPOINTS:
+  reciprocal_density: 64
+POTCAR_FUNCTIONAL: PBE_64
+POTCAR:
+  Ac: Ac
+  Ag: Ag
+  Al: Al
+  Ar: Ar
+  As: As
+  Au: Au
+  B: B
+  Ba: Ba_sv
+  Be: Be_sv
+  Bi: Bi
+  Br: Br
+  C: C
+  Ca: Ca_sv
+  Cd: Cd
+  Ce: Ce
+  Cl: Cl
+  Co: Co
+  Cr: Cr_pv
+  Cs: Cs_sv
+  Cu: Cu_pv # different from vasp rec. pv better converge with exp
+  Dy: Dy_3
+  Er: Er_3
+  Eu: Eu
+  F: F
+  Fe: Fe_pv
+  Ga: Ga_d
+  Gd: Gd
+  Ge: Ge_d
+  H: H
+  He: He
+  Hf: Hf_pv
+  Hg: Hg
+  Ho: Ho_3
+  I: I
+  In: In_d
+  Ir: Ir
+  K: K_sv
+  Kr: Kr
+  La: La
+  Li: Li_sv
+  Lu: Lu_3
+  Mg: Mg_pv
+  Mn: Mn_pv
+  Mo: Mo_pv
+  N: N
+  Na: Na_pv
+  Nb: Nb_pv
+  Nd: Nd_3
+  Ne: Ne
+  Ni: Ni_pv
+  Np: Np
+  O: O
+  Os: Os_pv
+  P: P
+  Pa: Pa
+  Pb: Pb_d
+  Pd: Pd
+  Pm: Pm_3
+  Pr: Pr_3
+  Pt: Pt
+  Pu: Pu
+  Rb: Rb_sv
+  Re: Re_pv
+  Rh: Rh_pv
+  Ru: Ru_pv
+  S: S
+  Sb: Sb
+  Sc: Sc_sv
+  Se: Se
+  Si: Si
+  Sm: Sm_3
+  Sn: Sn_d
+  Sr: Sr_sv
+  Ta: Ta_pv
+  Tb: Tb_3
+  Tc: Tc_pv
+  Te: Te
+  Th: Th
+  Ti: Ti_pv
+  Tl: Tl_d
+  Tm: Tm_3
+  U: U
+  V: V_pv
+  W: W_sv # W_pv in MP recomends
+  Xe: Xe
+  Y: Y_sv
+  # 2023-05-02: change Yb_2 to Yb_3 if POTCAR_FUNCTIONAL=PBE_54 else issue warning if Yb present
+  # since Yb_3 didn't exist prior to PBE_54
+  # reason: Yb_2 gives incorrect thermodynamics for most systems with Yb3+
+  # https://github.com/materialsproject/pymatgen/issues/2968
+  Yb: Yb_3
+  Zn: Zn
+  Zr: Zr_sv

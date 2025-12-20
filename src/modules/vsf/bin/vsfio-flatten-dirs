@@ -1,0 +1,70 @@
+#!/bin/bash
+
+flatten_dirs() {
+    local source_dir="$1"
+    local target_dir="$2"
+    
+    # Check if source directory exists
+    if [[ ! -d "$source_dir" ]]; then
+        echo "Error: Source directory does not exist: $source_dir" >&2
+        return 1
+    fi
+    
+    # Set target directory
+    if [[ -z "$target_dir" ]]; then
+        target_dir="${source_dir}_flat"
+    fi
+    
+    # Error out if target directory already exists
+    if [[ -d "$target_dir" ]]; then
+        echo "Error: Target directory already exists: $target_dir" >&2
+        return 1
+    fi
+    
+    # Check for filename conflicts first
+    declare -A seen_files
+    local conflict_found=false
+    
+    for subdir in "$source_dir"/*; do
+        [[ -d "$subdir" ]] || continue
+        
+        for file in "$subdir"/*; do
+            [[ -f "$file" ]] || continue
+            
+            local filename=$(basename "$file")
+            if [[ -n "${seen_files[$filename]}" ]]; then
+                echo "Error: Filename conflict detected: $filename" >&2
+                conflict_found=true
+            fi
+            seen_files["$filename"]=1
+        done
+    done
+    
+    if [[ "$conflict_found" == true ]]; then
+        return 1
+    fi
+    
+    # Create target directory
+    mkdir -p "$target_dir"
+    
+    # Copy all files
+    local file_count=0
+    for subdir in "$source_dir"/*; do
+        [[ -d "$subdir" ]] || continue
+        
+        for file in "$subdir"/*; do
+            [[ -f "$file" ]] || continue
+            
+            cp "$file" "$target_dir/"
+            ((file_count++))
+        done
+    done
+    
+    echo "Flattened $file_count files from $source_dir to $target_dir"
+}
+
+# Example usage:
+# flatten_dirs test_structures
+# flatten_dirs test_structures my_flat_dir
+
+flatten_dirs "$@"

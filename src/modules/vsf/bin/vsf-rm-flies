@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# Function to display help
+show_help() {
+  echo "Usage: $0 [-vi] [-vo] [-vs] [-va] [-r pattern] /path/to/dir [/path/to/dir2 ...]"
+  echo ""
+  echo "Options:"
+  echo "  -h, --help      Show this help message"
+  echo "  -vi             Remove VASP input files (INCAR, KPOINTS, POTCAR, etc.)"
+  echo "  -vo             Remove VASP output files (CHG, CHGCAR, etc., excluding OUTCAR/POSCAR)"
+  echo "  -vs             Remove scheduler files (*.err, *.out)"
+  echo "  -va             Remove all VASP files (-vi -vo -vs combined)"
+  echo "  -r pattern      Remove files matching glob pattern (can be used multiple times)"
+  echo ""
+  echo "Notes:"
+  echo "  - OUTCAR and POSCAR are only removed via -r patterns"
+  echo "  - Flags can be combined: -vi -vo, -vo -vs, etc."
+  echo "  - By default, no files are removed without explicit flags"
+  echo ""
+  echo "Examples:"
+  echo "  $0 -vo /path/to/vasp/dir                    # Remove output files only"
+  echo "  $0 -vi -vo /path/to/dir1 /path/to/dir2      # Remove input and output files"
+  echo "  $0 -va */                                   # Full cleanup of all subdirs"
+  echo "  $0 -r \"OUTCAR\" -r \"POSCAR\" /path/to/dir  # Remove OUTCAR and POSCAR"
+  echo "  $0 -vo -r \"*.log\" /path/to/dir             # Remove outputs + custom pattern"
+  exit 0
+}
+
+# Parse command line arguments
+VI_FLAG=false  # VASP input files
+VO_FLAG=false  # VASP output files
+VS_FLAG=false  # Scheduler files
+TARGET_DIRS=()
+CUSTOM_PATTERNS=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      show_help
+      ;;
+    -vi)
+      VI_FLAG=true
+      shift
+      ;;
+    -vo)
+      VO_FLAG=true
+      shift
+      ;;
+    -vs)
+      VS_FLAG=true
+      shift
+      ;;
+    -va)
+      VI_FLAG=true
+      VO_FLAG=true
+      VS_FLAG=true
+      shift
+      ;;
+    -r)
+      if [[ -z "$2" ]]; then
+        echo "Error: -r requires a pattern argument"
+        exit 1
+      fi
+      # Safety check: reject bare "*"
+      if [[ "$2" == "*" ]]; then
+        echo "Error: Pattern '*' is too dangerous and not allowed"
+        exit 1
+      fi
+      CUSTOM_PATTERNS+=("$2")
+      shift 2
+      ;;
+    -*)
+      echo "Error: Unknown option $1"
+      echo ""
+      show_help
+      ;;
+    *)
+      TARGET_DIRS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+# Check if any action is requested
+if [[ "$VI_FLAG" == false && "$VO_FLAG" == false && "$VS_FLAG" == false && ${#CUSTOM_PATTERNS[@]} -eq 0 ]]; then
+  show_help
+fi
+
+# VASP input files
+INPUT_FILES=(
+  INCAR
+  KPOINTS
+  KPOINTS.log
+  POSCAR.magmom.vasp
+  POTCAR
+  PRECALC
+)
+
+# VASP output files (excluding OUTCAR and POSCAR)
+OUTPUT_FILES=(
+  CHG
+  CHGCAR
+  CONTCAR
+  DOSCAR
+  EIGENVAL
+  IBZKPT
+  OSZICAR
+  PCDAT
+  REPORT
+  vasprun.xml
+  WAVECAR
+  XDATCAR
+)
+
+# Process each target directory
+for TARGET_DIR in "${TARGET_DIRS[@]}"; do
+  if [[ ! -d "$TARGET_DIR" ]]; then
+    echo "Warning: '$TARGET_DIR' is not a directory, skipping"
+    continue
+  fi
+  
+  echo "Cleaning directory: $TARGET_DIR"
+  
+  # Remove VASP input files if requested
+  if [[ "$VI_FLAG" == true ]]; then
+    for FILE in "${INPUT_FILES[@]}"; do
+      FILE_PATH="$TARGET_DIR/$FILE"
+      if [[ -e "$FILE_PATH" ]]; then
+        rm -f "$FILE_PATH"
+        echo "  Removed input: $FILE_PATH"
+      fi
+    done
+  fi
+  
+  # Remove VASP output files if requested
+  if [[ "$VO_FLAG" == true ]]; then
+    for FILE in "${OUTPUT_FILES[@]}"; do
+      FILE_PATH="$TARGET_DIR/$FILE"
+      if [[ -e "$FILE_PATH" ]]; then
+        rm -f "$FILE_PATH"
+        echo "  Removed output: $FILE_PATH"
+      fi
+    done
+  fi
+  
+  # Remove scheduler files if requested
+  if [[ "$VS_FLAG" == true ]]; then
+    shopt -s nullglob
+    for SCHEDULER_FILE in "$TARGET_DIR"/*.err "$TARGET_DIR"/*.out; do
+      rm -f "$SCHEDULER_FILE"
+      echo "  Removed scheduler: $SCHEDULER_FILE"
+    done
+    shopt -u nullglob
+  fi
+
+  # Remove files matching custom patterns
+  if [[ ${#CUSTOM_PATTERNS[@]} -gt 0 ]]; then
+    shopt -s nullglob
+    for PATTERN in "${CUSTOM_PATTERNS[@]}"; do
+      for MATCHED_FILE in "$TARGET_DIR"/$PATTERN; do
+        rm -f "$MATCHED_FILE"
+        echo "  Removed custom: $MATCHED_FILE"
+      done
+    done
+    shopt -u nullglob
+  fi
+  
+done

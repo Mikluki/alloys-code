@@ -1,0 +1,177 @@
+#!/bin/bash
+
+# vsf-outcar-copy - Copy OUTCAR files from source to target maintaining structure
+# Usage: vsf-outcar-copy <source_directory> <target_directory>
+# Usage: vsf-outcar-copy --copy <source_directory> <target_directory>
+
+outcar_copy() {
+    set -euo pipefail
+
+    # Initialize log file early
+    local LOG_FILE="xoutcar-copy.log"
+
+    # Log to both stdout and file
+    log_message() {
+        echo "$@" | tee -a "$LOG_FILE"
+    }
+
+    # Check if fd is available
+    if ! command -v fd >/dev/null 2>&1; then
+        log_message "ERROR: 'fd' command not found. Please install fd-find."
+        return 1
+    fi
+
+    # Parse flags
+    local COPY_MODE=false
+    local args=()
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -c|--copy)
+                COPY_MODE=true
+                shift
+                ;;
+            *)
+                args+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # Validate arguments
+    if [[ ${#args[@]} -ne 2 ]]; then
+        log_message "Usage: $0 [-c|--copy] <source_directory> <target_directory>"
+        log_message "Example: $0 cat-test-gnncp cat-test              # Dry run (default)"
+        log_message "Example: $0 --copy cat-test-gnncp cat-test       # Actually copy"
+        exit 1
+    fi
+
+    local SOURCE_DIR="${args[0]%/}"
+    local TARGET_DIR="${args[1]%/}"
+
+    # Validate directories exist
+    if [[ ! -d "$SOURCE_DIR" ]]; then
+        log_message "ERROR: Source directory does not exist: $SOURCE_DIR"
+        return 1
+    fi
+
+    if [[ ! -d "$TARGET_DIR" ]]; then
+        log_message "ERROR: Target directory does not exist: $TARGET_DIR"
+        return 1
+    fi
+
+    if [[ "$SOURCE_DIR" == "$TARGET_DIR" ]]; then
+        log_message "ERROR: Source and target are the same"
+        return 1
+    fi
+
+    # Initialize counters and directory cache
+    local outcar_found=0
+    local outcar_copied=0
+    local outcar_skipped=0
+    local has_issues=false
+    declare -A dir_cache
+
+    log_message "Starting OUTCAR copy..."
+    if [[ "$COPY_MODE" == "false" ]]; then
+        log_message "[DRY RUN] No files will be modified"
+    fi
+    log_message "Source: $SOURCE_DIR"
+    log_message "Target: $TARGET_DIR"
+
+    # Find all OUTCAR files (exact matches only, not suffixed variants)
+    local outcar_files
+    mapfile -t outcar_files < <(fd OUTCAR "$SOURCE_DIR" -I -t f | grep '/OUTCAR$')
+    outcar_found=${#outcar_files[@]}
+
+    if [[ $outcar_found -eq 0 ]]; then
+        log_message "No OUTCAR files found in source directory"
+        return 0
+    fi
+
+    log_message "Found $outcar_found OUTCAR files"
+
+    # Process each OUTCAR file
+    local start_time=$(date +%s)
+    local processed=0
+    
+    for outcar_file in "${outcar_files[@]}"; do
+        local rel_path="${outcar_file#$SOURCE_DIR/}"
+        local target_file="$TARGET_DIR/$rel_path"
+        local target_dir="${target_file%/*}"
+
+        processed=$((processed+1))
+        
+        # Progress every 200 files
+        if (( processed % 200 == 0 )); then
+            local current_time=$(date +%s)
+            local elapsed=$((current_time - start_time))
+            echo "  Processing... $processed/$outcar_found (elapsed: ${elapsed}s)" >&2
+        fi
+
+        # Check directory (with caching to avoid repeated stat calls)
+        if [[ -z "${dir_cache[$target_dir]:-}" ]]; then
+            if [[ ! -d "$target_dir" ]]; then
+                dir_cache[$target_dir]=0
+            else
+                dir_cache[$target_dir]=1
+            fi
+        fi
+
+        if [[ "${dir_cache[$target_dir]}" == "0" ]]; then
+            log_message "WARNING: Target directory missing for: $rel_path"
+            has_issues=true
+            outcar_skipped=$((outcar_skipped+1))
+            continue
+        fi
+
+        # Copy or simulate
+        if [[ "$COPY_MODE" == "false" ]]; then
+            # Dry run - just count
+            outcar_copied=$((outcar_copied+1))
+        else
+            # Actually copy
+            if cp "$outcar_file" "$target_file" 2>> "$LOG_FILE"; then
+                outcar_copied=$((outcar_copied+1))
+            else
+                log_message "ERROR: Failed to copy: $rel_path"
+                has_issues=true
+                outcar_skipped=$((outcar_skipped+1))
+            fi
+        fi
+    done
+    
+    local end_time=$(date +%s)
+    local total_elapsed=$((end_time - start_time))
+    log_message "Processing completed in ${total_elapsed}s"
+
+    # Summary
+    log_message ""
+    log_message "=== SUMMARY ==="
+    log_message "OUTCAR files found:   $outcar_found"
+    if [[ "$COPY_MODE" == "false" ]]; then
+        log_message "OUTCAR files to copy: $outcar_copied"
+    else
+        log_message "OUTCAR files copied:  $outcar_copied"
+    fi
+
+    if [[ $outcar_skipped -gt 0 ]]; then
+        log_message "OUTCAR files skipped: $outcar_skipped"
+    fi
+
+    # Report issues
+    if [[ "$has_issues" == true ]]; then
+        log_message ""
+        log_message "Issues found. See: $LOG_FILE"
+        return 1
+    else
+        if [[ "$COPY_MODE" == "false" ]]; then
+            log_message "[DRY RUN] Use --copy flag to actually copy files"
+        else
+            log_message "All OUTCARs successfully copied"
+        fi
+        return 0
+    fi
+}
+
+outcar_copy "$@"

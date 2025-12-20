@@ -1,0 +1,1319 @@
+{
+  "cluster_name": "arkuda",
+  "audit_timestamp": "2025-06-11T19:20:00.938014",
+  "total_nodes": 56,
+  "total_cores": 1856,
+  "partitions": {
+    "cpu": {
+      "nodes": 48,
+      "total_cores": 1632,
+      "total_memory_gb": 16405.2,
+      "node_types": {
+        "40c_391GB": 36,
+        "16c_195GB": 12
+      },
+      "limits": {
+        "max_time": "UNLIMITED",
+        "default_time": "NONE",
+        "max_nodes": "UNLIMITED",
+        "max_cpus_per_user": "UNLIMITED",
+        "max_jobs_per_user": "UNLIMITED",
+        "state": "UP",
+        "priority_tier": "1",
+        "preempt_mode": "OFF",
+        "allowed_accounts": "ALL"
+      }
+    },
+    "mem*": {
+      "nodes": 2,
+      "total_cores": 128,
+      "total_memory_gb": 5078.2,
+      "node_types": {
+        "64c_2539GB": 2
+      },
+      "limits": {
+        "status": "limits_not_found"
+      }
+    },
+    "gpu": {
+      "nodes": 6,
+      "total_cores": 96,
+      "total_memory_gb": 1171.8,
+      "node_types": {
+        "16c_195GB": 6
+      },
+      "limits": {
+        "max_time": "UNLIMITED",
+        "default_time": "NONE",
+        "max_nodes": "UNLIMITED",
+        "max_cpus_per_user": "UNLIMITED",
+        "max_jobs_per_user": "UNLIMITED",
+        "state": "UP",
+        "priority_tier": "1",
+        "preempt_mode": "OFF",
+        "allowed_accounts": "ALL"
+      }
+    }
+  },
+  "node_details": [
+    {
+      "name": "cn01",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn02",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn03",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn04",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn05",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn06",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn07",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn08",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn09",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn10",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn11",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn12",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn13",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn14",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn15",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn16",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn17",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn18",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn19",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn20",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn21",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn22",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn23",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn24",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn25",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn26",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn27",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn28",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn29",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "drain*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn30",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn31",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn32",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn33",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/40/40"
+    },
+    {
+      "name": "cn34",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn35",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn36",
+      "cores": 40,
+      "memory_mb": 400000,
+      "memory_gb": 390.6,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/40/0/40"
+    },
+    {
+      "name": "cn37",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "cn38",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/16/16"
+    },
+    {
+      "name": "cn39",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "mix",
+      "core_allocation": "2/14/0/16"
+    },
+    {
+      "name": "cn40",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/16/16"
+    },
+    {
+      "name": "cn41",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/16/16"
+    },
+    {
+      "name": "cn42",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "cn43",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/16/16"
+    },
+    {
+      "name": "cn44",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/16/16"
+    },
+    {
+      "name": "cn45",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "cn46",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "cn47",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "down*",
+      "core_allocation": "0/0/16/16"
+    },
+    {
+      "name": "cn48",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "cpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "ct01",
+      "cores": 64,
+      "memory_mb": 2600000,
+      "memory_gb": 2539.1,
+      "partitions": [
+        "mem*"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/64/64"
+    },
+    {
+      "name": "ct02",
+      "cores": 64,
+      "memory_mb": 2600000,
+      "memory_gb": 2539.1,
+      "partitions": [
+        "mem*"
+      ],
+      "state": "drain",
+      "core_allocation": "0/0/64/64"
+    },
+    {
+      "name": "gn01",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "gpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "gn02",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "gpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "gn03",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "gpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "gn04",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "gpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "gn05",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "gpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    },
+    {
+      "name": "gn06",
+      "cores": 16,
+      "memory_mb": 200000,
+      "memory_gb": 195.3,
+      "partitions": [
+        "gpu"
+      ],
+      "state": "idle",
+      "core_allocation": "0/16/0/16"
+    }
+  ],
+  "usable_resources_mix_included": {
+    "total_nodes": 27,
+    "total_cores": 792,
+    "total_memory_gb": 8202.600000000002,
+    "by_partition": {
+      "cpu": {
+        "nodes": 21,
+        "total_cores": 696,
+        "total_memory_gb": 7030.800000000002,
+        "node_types": {
+          "40c_391GB": 15,
+          "16c_195GB": 6
+        }
+      },
+      "gpu": {
+        "nodes": 6,
+        "total_cores": 96,
+        "total_memory_gb": 1171.8,
+        "node_types": {
+          "16c_195GB": 6
+        }
+      }
+    },
+    "node_details": [
+      {
+        "name": "cn12",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn15",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn16",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn18",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn19",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn20",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn25",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn26",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn28",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn30",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn31",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn32",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn34",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn35",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn36",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn37",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn39",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "mix",
+        "core_allocation": "2/14/0/16"
+      },
+      {
+        "name": "cn42",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn45",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn46",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn48",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn01",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn02",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn03",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn04",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn05",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn06",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      }
+    ]
+  },
+  "usable_resources_mix_dropped": {
+    "total_nodes": 26,
+    "total_cores": 776,
+    "total_memory_gb": 8007.300000000003,
+    "by_partition": {
+      "cpu": {
+        "nodes": 20,
+        "total_cores": 680,
+        "total_memory_gb": 6835.500000000002,
+        "node_types": {
+          "40c_391GB": 15,
+          "16c_195GB": 5
+        }
+      },
+      "gpu": {
+        "nodes": 6,
+        "total_cores": 96,
+        "total_memory_gb": 1171.8,
+        "node_types": {
+          "16c_195GB": 6
+        }
+      }
+    },
+    "node_details": [
+      {
+        "name": "cn12",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn15",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn16",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn18",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn19",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn20",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn25",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn26",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn28",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn30",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn31",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn32",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn34",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn35",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn36",
+        "cores": 40,
+        "memory_mb": 400000,
+        "memory_gb": 390.6,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/40/0/40"
+      },
+      {
+        "name": "cn37",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn42",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn45",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn46",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "cn48",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "cpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn01",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn02",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn03",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn04",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn05",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      },
+      {
+        "name": "gn06",
+        "cores": 16,
+        "memory_mb": 200000,
+        "memory_gb": 195.3,
+        "partitions": [
+          "gpu"
+        ],
+        "state": "idle",
+        "core_allocation": "0/16/0/16"
+      }
+    ]
+  },
+  "summary": {
+    "total_partitions": 3,
+    "average_cores_per_node": 33.1,
+    "total_memory_gb": 22655.2,
+    "largest_partition": "cpu",
+    "usable_efficiency_mix_included": 42.7,
+    "usable_efficiency_mix_dropped": 41.8
+  }
+}

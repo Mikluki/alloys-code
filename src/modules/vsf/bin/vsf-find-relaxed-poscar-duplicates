@@ -1,0 +1,217 @@
+#!/bin/bash
+
+# Function to flag directories where POSCAR relaxation had no significant effect
+flag_no_change_dirs() {
+    local base_path=""
+    local pattern="*_stage_*"
+    local precision=4
+    local move_mode=false
+    local help_mode=false
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --move)
+                move_mode=true
+                shift
+                ;;
+            --precision)
+                precision="$2"
+                shift 2
+                ;;
+            --pattern)
+                pattern="$2"
+                shift 2
+                ;;
+            --help|-h)
+                help_mode=true
+                shift
+                ;;
+            -*)
+                echo "Unknown option: $1"
+                return 1
+                ;;
+            *)
+                if [[ -z "$base_path" ]]; then
+                    base_path="$1"
+                else
+                    echo "Error: Multiple paths specified. Use --help for usage."
+                    return 1
+                fi
+                shift
+                ;;
+        esac
+    done
+    
+    # Show help
+    if [[ "$help_mode" == true ]]; then
+        cat << 'EOF'
+Usage: flag_no_change_dirs [OPTIONS] PATH
+
+Flag directories where POSCAR relaxation had no significant effect.
+
+OPTIONS:
+    --move              Actually rename directories (default: dry-run mode)
+    --precision N       Decimal precision for comparison (default: 4)
+    --pattern PATTERN   Directory pattern to match (default: "*_stage_*")
+    --help, -h          Show this help message
+
+EXAMPLES:
+    # Dry run (default) - preview what would be flagged
+    flag_no_change_dirs /path/to/chained_test
+    
+    # Actually rename directories
+    flag_no_change_dirs --move /path/to/chained_test
+    
+    # Use different precision
+    flag_no_change_dirs --precision 6 /path/to/chained_test
+    
+    # Use different pattern
+    flag_no_change_dirs --pattern "*_stage_02_*" /path/to/chained_test
+
+DIRECTORY STRUCTURE EXPECTED:
+    calc1_stage_01_csym/
+    ├── POSCAR       # relaxed output
+    └── POSCAR.prev  # input to relaxation
+
+RESULT:
+    - Directories with no change: renamed to *_no_change
+    - Directories already flagged: skipped
+    - Missing files: reported as errors
+
+MANAGING FLAGGED DIRS:
+    # Archive flagged directories
+    mkdir -p archive_no_change
+    mv *_no_change archive_no_change/
+EOF
+        return 0
+    fi
+    
+    # Validate required arguments
+    if [[ -z "$base_path" ]]; then
+        echo "Error: PATH is required. Use --help for usage."
+        return 1
+    fi
+    
+    if [[ ! -d "$base_path" ]]; then
+        echo "Error: Directory '$base_path' does not exist."
+        return 1
+    fi
+    
+    # Validate precision is a number
+    if ! [[ "$precision" =~ ^[0-9]+$ ]]; then
+        echo "Error: Precision must be a positive integer."
+        return 1
+    fi
+    
+    echo "Scanning directories in: $base_path"
+    echo "Pattern: $pattern"
+    echo "Precision: $precision decimal places"
+    if [[ "$move_mode" == true ]]; then
+        echo "Mode: MOVE (will rename directories)"
+    else
+        echo "Mode: DRY RUN (preview only, use --move to actually rename)"
+    fi
+    echo ""
+    
+    local processed=0
+    local flagged=0
+    local skipped=0
+    local errors=0
+    
+    # Process directories
+    while IFS= read -r -d '' dir; do
+        local dir_name=$(basename "$dir")
+        
+        # Skip if already flagged
+        if [[ "$dir_name" == *"_no_change"* ]]; then
+            echo "SKIP: $dir_name (already flagged)"
+            ((skipped++))
+            continue
+        fi
+        
+        ((processed++))
+        
+        local poscar="$dir/POSCAR"
+        local poscar_prev="$dir/POSCAR.prev"
+        
+        # Check file existence
+        if [[ ! -f "$poscar" ]]; then
+            echo "ERROR: $dir_name - missing POSCAR"
+            ((errors++))
+            continue
+        fi
+        
+        if [[ ! -f "$poscar_prev" ]]; then
+            echo "SKIP: $dir_name - no POSCAR.prev (probably first stage)"
+            ((skipped++))
+            continue
+        fi
+        
+        # Compare POSCARs
+        if compare_poscars_with_precision "$poscar_prev" "$poscar" "$precision"; then
+            # No significant change detected
+            local new_name="${dir_name}_no_change"
+            local new_path="$(dirname "$dir")/$new_name"
+            
+            if [[ "$move_mode" == true ]]; then
+                if mv "$dir" "$new_path"; then
+                    echo "FLAGGED: $dir_name -> $new_name"
+                    ((flagged++))
+                else
+                    echo "ERROR: Failed to rename $dir_name"
+                    ((errors++))
+                fi
+            else
+                echo "[DRY RUN] Would flag: $dir_name -> $new_name"
+                ((flagged++))
+            fi
+        else
+            echo "CHANGE: $dir_name (significant changes detected)"
+        fi
+        
+    done < <(find "$base_path" -maxdepth 1 -type d -name "$pattern" -print0)
+    
+    # Summary
+    echo ""
+    echo "=== SUMMARY ==="
+    echo "Processed: $processed directories"
+    echo "Flagged: $flagged directories"
+    echo "Skipped: $skipped directories" 
+    echo "Errors: $errors directories"
+    
+    if [[ "$move_mode" == false && "$flagged" -gt 0 ]]; then
+        echo ""
+        echo "Run with --move to actually rename flagged directories."
+    fi
+}
+
+# Helper function to compare POSCARs with specified precision
+compare_poscars_with_precision() {
+    local prev="$1"
+    local current="$2"
+    local precision="$3"
+    
+    # Quick identical check first
+    if cmp -s "$prev" "$current"; then
+        return 0  # Files identical
+    fi
+    
+    # Round both files to specified precision and compare
+    local prev_rounded=$(awk -v prec="$precision" '{
+        if (NR <= 8) print $0
+        else printf "%.*f %.*f %.*f\n", prec, $1, prec, $2, prec, $3
+    }' "$prev")
+    
+    local curr_rounded=$(awk -v prec="$precision" '{
+        if (NR <= 8) print $0  
+        else printf "%.*f %.*f %.*f\n", prec, $1, prec, $2, prec, $3
+    }' "$current")
+    
+    if [[ "$prev_rounded" == "$curr_rounded" ]]; then
+        return 0  # No significant change
+    fi
+    return 1  # Significant change detected
+}
+
+flag_no_change_dirs "$@"

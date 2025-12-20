@@ -1,0 +1,167 @@
+#!/bin/bash
+
+# vsf-gnn-batch-merge - Batch merge JSONs across all gnncp/vasp dataset pairs
+# Usage: vsf-gnn-batch-merge --to-vasp [-m]
+# Usage: vsf-gnn-batch-merge --to-gnncp [-m]
+
+# Configuration: List all gnncp:vasp directory pairs
+PARENT="/home/mik/1_projects/alloys_code/src/modules_v2/main"  # or wherever your datasets live
+
+declare -a SYNC_PAIRS=(
+    "$PARENT/xds-metrics/xout/w-outcar-pure-gnncp:$PARENT/catxy-eform/00-outcar-pure"
+    "$PARENT/xds-metrics/xout/x-cat-1-gnncp:$PARENT/catxy-eform/outcar-cat-1"
+    "$PARENT/xds-metrics/xout/x-cat-2-gnncp:$PARENT/catxy-eform/outcar-cat-2"
+    "$PARENT/xds-metrics/xout/x-hull-gnncp:$PARENT/hull-eform/outcar-hull"
+    "$PARENT/xds-metrics/xout/x-liquid-k1-gnncp:$PARENT/liquid/liquid-static-efrom/outcar-liquid300k1"
+    "$PARENT/xds-metrics/xout/x-liquid-k2-gnncp:$PARENT/liquid/liquid-static-efrom/outcar-liquid300k2"
+    "$PARENT/xds-metrics/xout/x-rand-01-gnncp:$PARENT/rand-eform/outcar-rand-1"
+    "$PARENT/xds-metrics/xout/x-rand-02-gnncp:$PARENT/rand-eform/outcar-rand-2"
+)
+
+gnn_batch_merge() {
+    set -uo pipefail
+
+    # Colors
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    BLUE='\033[0;34m'
+    NC='\033[0m'
+
+    print_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+    print_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+    print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+    print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+
+    # Parse flags
+    local DIRECTION=""
+    local MERGE_MODE=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --to-vasp)
+                DIRECTION="to-vasp"
+                shift
+                ;;
+            --to-gnncp)
+                DIRECTION="to-gnncp"
+                shift
+                ;;
+            -m|--merge)
+                MERGE_MODE=true
+                shift
+                ;;
+            *)
+                print_error "Unknown flag: $1"
+                exit 1
+                ;;
+        esac
+    done
+
+    # Validate direction
+    if [[ -z "$DIRECTION" ]]; then
+        print_error "Usage: $0 --to-vasp|--to-gnncp [-m]"
+        print_error "  --to-vasp    Sync gnncp → vasp/full directories"
+        print_error "  --to-gnncp   Sync vasp/full → gnncp directories"
+        print_error "  -m           Actually merge (default: dry-run)"
+        exit 1
+    fi
+
+    # Display operation plan
+    print_info "Batch Merge Configuration"
+    echo "---"
+    echo "Direction: $DIRECTION"
+    echo "Total pairs: ${#SYNC_PAIRS[@]}"
+    echo ""
+
+    # Show what will happen
+    if [[ "$MERGE_MODE" == "false" ]]; then
+        print_info "DRY RUN - Operations that would be performed:"
+    else
+        print_warn "MERGE MODE - Files WILL be modified:"
+    fi
+    local i=1
+    for pair in "${SYNC_PAIRS[@]}"; do
+        IFS=':' read -r gnncp vasp <<< "$pair"
+        if [[ "$DIRECTION" == "to-vasp" ]]; then
+            echo "  $i. $gnncp →"
+            echo "     $vasp"
+            echo ""
+        else
+            echo "  $i. $vasp →"
+            echo "     $gnncp"
+            echo ""
+        fi
+        ((i++))
+    done
+    echo ""
+
+    # Dry-run stops here
+    if [[ "$MERGE_MODE" == "false" ]]; then
+        print_info "Dry-run complete. Use -m flag to actually merge."
+        return 0
+    fi
+
+    # Confirmation prompt before destructive operation
+    print_warn "Confirm: files will be overwritten. Continue? (yes/no)"
+    read -r confirmation
+    if [[ "$confirmation" != "yes" ]]; then
+        print_info "Cancelled."
+        return 0
+    fi
+
+    # Execute merges
+    echo ""
+    print_info "Starting batch merge..."
+    echo "---"
+
+    local failed=0
+    local succeeded=0
+
+    mkdir -p logs
+    for pair in "${SYNC_PAIRS[@]}"; do
+        IFS=':' read -r gnncp vasp <<< "$pair"
+
+        if [[ "$DIRECTION" == "to-vasp" ]]; then
+            SOURCE="$gnncp"
+            TARGET="$vasp"
+        else
+            SOURCE="$vasp"
+            TARGET="$gnncp"
+        fi
+
+        # Check directories exist
+        if [[ ! -d "$SOURCE" ]]; then
+            print_error "Source not found: $SOURCE"
+            ((failed++))
+            continue
+        fi
+
+        if [[ ! -d "$TARGET" ]]; then
+            print_error "Target not found: $TARGET"
+            ((failed++))
+            continue
+        fi
+
+        # Call vsf-gnn-merge
+        print_info "Merging: $SOURCE → $TARGET"
+        if vsf-gnn-merge -m "$SOURCE" "$TARGET"; then
+            ((succeeded++))
+        else
+            print_error "Merge failed: $SOURCE → $TARGET"
+            ((failed++))
+        fi
+        echo ""
+    done
+
+    # Summary
+    echo "---"
+    print_info "Batch merge complete"
+    print_success "Succeeded: $succeeded"
+    if [[ $failed -gt 0 ]]; then
+        print_error "Failed: $failed"
+        return 1
+    fi
+}
+
+gnn_batch_merge "$@"

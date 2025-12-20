@@ -1,0 +1,83 @@
+# export MKLROOT=/opt/intel/oneapi/mkl/2025.2
+
+# Default precompiler options
+CPP_OPTIONS = -DHOST=\"LinuxNV\" \
+              -DMPI -DMPI_INPLACE -DMPI_BLOCK=8000 -Duse_collective \
+              -DscaLAPACK \
+              -DCACHE_SIZE=4000 \
+              -Davoidalloc \
+              -Dvasp6 \
+              -Duse_bse_te \
+              -Dtbdyn \
+              -Dqd_emulate \
+              -Dfock_dblbuf \
+              -D_OPENMP \
+              -D_OPENACC
+
+CPP         = nvfortran -Mpreprocess -Mfree -Mextend -E $(CPP_OPTIONS) $*$(FUFFIX)  > $*$(SUFFIX)
+
+FC          = mpif90 -acc -gpu=cc60,cc70,cc80,cc89,cc90,cuda12.8 -mp
+FCL         = mpif90 -acc -gpu=cc60,cc70,cc80,cc89,cc90,cuda12.8 -mp -c++libs
+
+FREE        = -Mfree
+
+FFLAGS      = -Mbackslash -Mlarge_arrays
+
+OFLAG       = -fast
+
+DEBUG       = -Mfree -O0 -traceback
+
+OBJECTS     = fftmpiw.o fftmpi_map.o fftw3d.o fft3dlib.o
+
+LLIBS       = -cudalib=cublas,cusolver,cufft -cuda
+
+# Redefine the standard list of O1 and O2 objects
+SOURCE_O1  := pade_fit.o minimax_dependence.o
+SOURCE_O2  := pead.o
+
+# For what used to be vasp.5.lib
+CPP_LIB     = $(CPP)
+FC_LIB      = nvfortran
+CC_LIB      = nvc -w
+CFLAGS_LIB  = -O
+FFLAGS_LIB  = -O1 -Mfixed
+FREE_LIB    = $(FREE)
+
+OBJECTS_LIB = linpack_double.o
+
+# For the parser library
+CXX_PARS    = nvc++ --no_warnings
+
+# Target architecture
+VASP_TARGET_CPU ?= -tp host
+FFLAGS     += $(VASP_TARGET_CPU)
+
+# NVHPC root autodetect
+NVROOT      =$(shell which nvfortran | awk -F /compilers/bin/nvfortran '{ print $$1 }')
+
+# Software emulation of quadruple precision
+QD         ?= $(NVROOT)/compilers/extras/qd
+LLIBS      += -L$(QD)/lib -Wl,-Bstatic -lqdmod -lqd -Wl,-Bdynamic
+INCS       += -I$(QD)/include/qd
+
+# Intel MKL for FFTW, BLAS, LAPACK, ScaLAPACK  
+MKLROOT    ?= /opt/intel/oneapi/mkl/latest
+LLIBS_MKL   = -Mmkl -L$(MKLROOT)/lib -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64
+INCS       += -I/usr/include  
+LLIBS      += $(LLIBS_MKL)
+
+
+# Optional external ScaLAPACK (not used)
+# SCALAPACK_ROOT ?= /path/to/your/scalapack/installation
+# LLIBS_MKL   = -L$(SCALAPACK_ROOT)/lib -lscalapack -Mmkl
+
+# Optional HDF5 support (currently unused)
+# CPP_OPTIONS+= -DVASP_HDF5
+# HDF5_ROOT  ?= /path/to/hdf5
+# LLIBS += -L$(HDF5_ROOT)/lib -lhdf5_fortran -Wl,-rpath=$(HDF5_ROOT)/lib
+# INCS       += -I$(HDF5_ROOT)/include
+
+# Optional Wannier90 support
+# CPP_OPTIONS    += -DVASP2WANNIER90
+# WANNIER90_ROOT ?= /path/to/your/wannier90/installation
+# LLIBS          += -L$(WANNIER90_ROOT)/lib -lwannier
