@@ -1,0 +1,50 @@
+{
+  "calc_dir": "/home/mik/1_projects/alloys_code/src/modules_v2/vsf/bin/devil/tests/md_test_slurm_test_md_orchestrator_with_real_slurm",
+  "config": {
+    "vasp_setup": "module load vasp/6.4",
+    "ntasks": 1,
+    "ncore": 1,
+    "kpar": 1,
+    "algo": "Normal"
+  },
+  "stats": {
+    "completed_runs": 3,
+    "failed_runs": 0,
+    "run_durations": {
+      "0": 12.431902,
+      "1": 12.26626,
+      "2": 12.225562
+    }
+  },
+  "current_run": 3,
+  "start_time": "2025-12-13T02:08:49.931721",
+  "max_iterations": 3,
+  "max_duration_hours": null,
+  "status": "stopped",
+  "runs": {
+    "0": {
+      "run_number": 0,
+      "job_id": "57",
+      "submitted_at": "2025-12-13T02:08:49.975146",
+      "completed_at": "2025-12-13T02:09:02.407048",
+      "status": "completed",
+      "elapsed_time_sec": 12.431902
+    },
+    "1": {
+      "run_number": 1,
+      "job_id": "58",
+      "submitted_at": "2025-12-13T02:09:02.449245",
+      "completed_at": "2025-12-13T02:09:14.715505",
+      "status": "completed",
+      "elapsed_time_sec": 12.26626
+    },
+    "2": {
+      "run_number": 2,
+      "job_id": "59",
+      "submitted_at": "2025-12-13T02:09:14.777621",
+      "completed_at": "2025-12-13T02:09:27.003183",
+      "status": "completed",
+      "elapsed_time_sec": 12.225562
+    }
+  }
+}

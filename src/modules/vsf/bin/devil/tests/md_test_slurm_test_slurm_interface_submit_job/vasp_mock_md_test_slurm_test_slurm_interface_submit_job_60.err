@@ -1,0 +1,41 @@
++ cd /home/mik/1_projects/alloys_code/src/modules_v2/vsf/bin/devil/tests/md_test_slurm_test_slurm_interface_submit_job
+++ date
++ echo 'Mock VASP started at Sat Dec 13 02:09:27 AM MSK 2025'
+++ seq 1 10
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ for i in $(seq 1 10)
++ '[' -f STOPCAR ']'
++ sleep 1
++ echo 'Creating output files...'
++ cat
++ cat
+++ date
++ echo 'Files created at Sat Dec 13 02:09:38 AM MSK 2025'
++ ls -la OUTCAR CONTCAR
++ exit 0

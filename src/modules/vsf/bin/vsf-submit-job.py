@@ -149,8 +149,8 @@ exit $vasp_exit
         if cpus_per_task is None or nodes > 1:
             sbatch_cmd.append(f"--nodes={nodes}")
 
-        # Add nodelist if specified (not empty)
-        if nodelist and nodelist.strip():
+        # Add nodelist only if it's not None and not empty/whitespace
+        if nodelist is not None and isinstance(nodelist, str) and nodelist.strip():
             sbatch_cmd.append(f"--nodelist={nodelist.strip()}")
 
         # Add partition if specified

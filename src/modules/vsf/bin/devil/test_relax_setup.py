@@ -48,7 +48,7 @@ def create_mock_contcar(calc_dir: Path):
 
 def test_directory_resolution():
     """Test DirectoryResolver"""
-    from vasp_devil_prototype import DirectoryResolver, StageContext
+    from core import DirectoryResolver, StageContext
 
     print("\n=== Testing DirectoryResolver ===")
 
@@ -73,7 +73,8 @@ def test_directory_resolution():
 
 def test_copy_stage():
     """Test CopyStage functionality"""
-    from vasp_devil_prototype import CopyStage, StageContext
+    from vsf.bin.devil.core import StageContext
+    from vsf.bin.devil.core_stages import CopyStage
 
     print("\n=== Testing CopyStage ===")
 
@@ -119,7 +120,8 @@ def test_copy_stage():
 
 def test_validation_stage():
     """Test ValidationStage"""
-    from vasp_devil_prototype import StageContext, ValidationStage
+    from vsf.bin.devil.core import StageContext
+    from vsf.bin.devil.core_stages import ValidationStage
 
     print("\n=== Testing ValidationStage ===")
 
@@ -181,10 +183,7 @@ def test_validation_stage():
 
 def test_workflow_creation():
     """Test workflow creation"""
-    from vasp_devil_prototype import (
-        create_double_relaxation_workflow,
-        create_simple_workflow,
-    )
+    from stages import create_double_relaxation_workflow, create_simple_workflow
 
     print("\n=== Testing Workflow Creation ===")
 
@@ -209,7 +208,8 @@ def test_workflow_creation():
 
 def test_state_management():
     """Test state creation and persistence"""
-    from vasp_devil_prototype import StateManager, create_simple_workflow
+    from vsf.bin.devil.core_stages import create_simple_workflow
+    from vsf.bin.devil.engine import StateManager
 
     print("\n=== Testing State Management ===")
 
@@ -236,7 +236,7 @@ def test_state_management():
 
         # Create state
         state = manager.create_initial_state(config, workflow, directories)
-        print(f"✓ Created state with {len(state['workflow_instances'])} instances")
+        print(f"✓ Created state with {len(state.workflow_instances)} instances")
 
         # Save state
         success = manager.save(state)
@@ -247,18 +247,18 @@ def test_state_management():
         print(f"{'✓' if loaded else '✗'} Loaded state from file")
 
         if loaded:
-            print(f"  Workflow name: {loaded['workflow_name']}")
-            print(f"  Instances: {len(loaded['workflow_instances'])}")
+            print(f"  Workflow name: {loaded.workflow_name}")
+            print(f"  Instances: {len(loaded.workflow_instances)}")
 
             # Show first instance
             first_dir = str(directories[0])
-            first_inst = loaded["workflow_instances"][first_dir]
+            first_inst = loaded.workflow_instances[first_dir]
             print(f"\n  First instance ({first_dir}):")
-            print(f"    Status: {first_inst['status']}")
-            print(f"    Current stage: {first_inst['current_stage']}")
+            print(f"    Status: {first_inst.status}")
+            print(f"    Current stage: {first_inst.current_stage}")
             print(f"    Stages:")
-            for stage in first_inst["stages"]:
-                print(f"      - {stage['name']}: {stage['status']}")
+            for stage in first_inst.stages:
+                print(f"      - {stage.name}: {stage.status}")
 
 
 def create_demo_setup():
@@ -278,12 +278,8 @@ def create_demo_setup():
 
     print(f"\n✓ Demo setup created in: {demo_dir}")
     print("\nTo test with the prototype, run:")
-    print(f"  python vasp_devil_prototype.py 'demo_vasp_calcs/struct_*' \\")
-    print(f"    16 4 2 Normal \\")
-    print(f"    --vasp-setup 'module load vasp' \\")
-    print(f"    --workflow double \\")
-    print(f"    --max-jobs 2 \\")
-    print(f"    --dry-run")
+    print(f"  python run_double_relaxation.py")
+    print(f"  (after editing DIRECTORIES_PATTERN to 'demo_vasp_calcs/struct_*')")
 
     return demo_dir
 
@@ -313,7 +309,7 @@ def run_all_tests():
 
     except ImportError as e:
         print(f"\n✗ Import error: {e}")
-        print("Make sure vasp_devil_prototype.py is in the same directory")
+        print("Make sure core.py, stages.py, and engine.py are in the same directory")
     except Exception as e:
         print(f"\n✗ Test failed with error: {e}")
         import traceback
