@@ -19,7 +19,7 @@ from vsf.core.md.md_config import (
     GNNMDConfig,
     LoggingConfig,
     StabilityCheckConfig,
-    VASPEquilibrationConfig,
+    VASPConfig,
 )
 from vsf.core.md.md_runner import GNNMDRunner
 from vsf.core.md.md_vasp import VASPTrajectoryAnalyzer
@@ -51,12 +51,12 @@ logging_config = LoggingConfig(
     profile_summary_interval_steps=50,
 )
 
-eq_config = VASPEquilibrationConfig(
+eq_config = VASPConfig(
     burn_in_ps=5,
     stability_window_ps=1,
     temperature_target_k=1400,
     temperature_tolerance_k=50,
-    md_timestep_fs=2.0,  # VASP timestep (POTIM)
+    md_timestep_fs_potim=2.0,  # VASP timestep (POTIM)
 )
 
 analysis_config = AnalysisConfig(
@@ -72,7 +72,7 @@ analysis_config = AnalysisConfig(
 md_config = GNNMDConfig(
     thermostat_type="nose_hoover_chain",
     simulation_duration_ps=10,  # Collapse timescale: ~1-10 ps
-    md_timestep_fs=2.0,
+    md_timestep_fs_potim=2.0,
     target_temperature_k=1400,
     nose_hoover_damping_fs=200.0,
 )
@@ -90,7 +90,10 @@ LOGGER.info("STEP 1: Load and analyze VASP reference trajectory")
 LOGGER.info("=" * 80)
 
 vasp_analyzer = VASPTrajectoryAnalyzer()
-vasp_data = vasp_analyzer.load_trajectory(vasp_dir)
+# vasp_data = vasp_analyzer.load_trajectory(vasp_dir)
+vasp_data = vasp_analyzer.load_trajectories_from_files(
+    vasp_dir, md_timestep_fs=md_config.md_timestep_fs_potim
+)
 LOGGER.info(f"Loaded VASP trajectory: {len(vasp_data['frames'])} frames")
 
 eq_start, eq_end = vasp_analyzer.identify_equilibrated_window(vasp_data, eq_config)

@@ -78,7 +78,7 @@ class GNNMDRunner:
         )
 
         # Set up thermostat
-        dt = md_config.md_timestep_fs * units.fs
+        dt = md_config.md_timestep_fs_potim * units.fs
         T = md_config.target_temperature_k
 
         if md_config.thermostat_type == "nose_hoover_chain":
@@ -94,7 +94,7 @@ class GNNMDRunner:
                 tdamp=tdamp,
             )
             LOGGER.info(
-                f"Initialized NoseHooverChainNVT: T={T} K, dt={md_config.md_timestep_fs} fs, "
+                f"Initialized NoseHooverChainNVT: T={T} K, dt={md_config.md_timestep_fs_potim} fs, "
                 f"damping={md_config.nose_hoover_damping_fs} fs"
             )
         elif md_config.thermostat_type == "langevin":
@@ -107,7 +107,7 @@ class GNNMDRunner:
                 friction=md_config.langevin_friction_coeff / units.fs,
             )
             LOGGER.info(
-                f"Initialized Langevin: T={T} K, dt={md_config.md_timestep_fs} fs, "
+                f"Initialized Langevin: T={T} K, dt={md_config.md_timestep_fs_potim} fs, "
                 f"friction={md_config.langevin_friction_coeff} fs^-1"
             )
         else:
@@ -137,14 +137,14 @@ class GNNMDRunner:
 
         # Calculate pre/post-collapse frame counts from AnalysisConfig
         pre_collapse_steps = int(
-            analysis_config.pre_collapse_ps / (md_config.md_timestep_fs / 1000)
+            analysis_config.pre_collapse_ps / (md_config.md_timestep_fs_potim / 1000)
         )
         post_collapse_steps = int(
-            analysis_config.post_collapse_ps / (md_config.md_timestep_fs / 1000)
+            analysis_config.post_collapse_ps / (md_config.md_timestep_fs_potim / 1000)
         )
 
         n_total_steps = int(
-            md_config.simulation_duration_ps / (md_config.md_timestep_fs / 1000)
+            md_config.simulation_duration_ps / (md_config.md_timestep_fs_potim / 1000)
         )
         collapse_time_ps: Optional[float] = None
         collapse_reason: Optional[str] = None
@@ -169,7 +169,7 @@ class GNNMDRunner:
                 timings["run"].append(time.perf_counter() - t_run_start)
             except Exception as e:
                 LOGGER.error(f"MD step {step} failed with exception: {e}")
-                collapse_time_ps = step * md_config.md_timestep_fs / 1000
+                collapse_time_ps = step * md_config.md_timestep_fs_potim / 1000
                 collapse_reason = f"Exception: {e}"
                 break
 
@@ -190,7 +190,7 @@ class GNNMDRunner:
             timings["kin_temp"].append(time.perf_counter() - t_kin_start)
 
             # Store trajectory (all frames)
-            current_time_ps = step * md_config.md_timestep_fs / 1000
+            current_time_ps = step * md_config.md_timestep_fs_potim / 1000
             trajectory.append(atoms.copy())
             energies.append(energy)
             temperatures.append(temperature)
@@ -264,7 +264,7 @@ class GNNMDRunner:
                     try:
                         dyn.run(1)
                         post_step = step + 1 + extra_step
-                        post_time = post_step * md_config.md_timestep_fs / 1000
+                        post_time = post_step * md_config.md_timestep_fs_potim / 1000
 
                         # Store post-collapse frames
                         trajectory.append(atoms.copy())
@@ -394,7 +394,7 @@ class GNNMDRunner:
         return {
             "thermostat_type": config.thermostat_type,
             "simulation_duration_ps": config.simulation_duration_ps,
-            "md_timestep_fs": config.md_timestep_fs,
+            "md_timestep_fs": config.md_timestep_fs_potim,
             "target_temperature_k": config.target_temperature_k,
             "nose_hoover_damping_fs": config.nose_hoover_damping_fs,
             "langevin_friction_coeff": config.langevin_friction_coeff,

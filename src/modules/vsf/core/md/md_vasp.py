@@ -5,7 +5,7 @@ import numpy as np
 from ase import Atoms
 from ase.io import read as ase_read
 
-from .md_config import AnalysisConfig, VASPEquilibrationConfig
+from .md_config import AnalysisConfig, VASPConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +20,121 @@ class VASPTrajectoryAnalyzer:
 
     def __init__(self):
         pass
+
+    def _frames_overlap(
+        self, frame_last: Atoms, frame_first: Atoms, tolerance: float = 1e-6
+    ) -> bool:
+        """
+        Check if two frames are identical (overlap detection for fragmented trajectories).
+
+        Compares atomic positions element-wise.
+        Returns True if all atoms within tolerance distance.
+        """
+        if len(frame_last) != len(frame_first):
+            return False
+
+        pos_diff = np.max(np.abs(frame_last.positions - frame_first.positions))
+        return pos_diff < tolerance
+
+    def load_trajectories_from_files(
+        self, vasp_dir: Path, md_timestep_fs: float
+    ) -> dict:
+        """
+        Load and merge fragmented XDATCAR.1, XDATCAR.2, ... files.
+
+        Handles:
+        - Detection and loading of all XDATCAR.N files in numerical order
+        - Removal of frame overlaps (VASP repeats last frame between files)
+        - Merging into continuous trajectory
+        - Time series with constant timestep
+
+        Args:
+            vasp_dir: Directory containing XDATCAR.* files
+            md_timestep_fs: MD timestep in femtoseconds (no default)
+
+        Raises:
+            FileNotFoundError: if no XDATCAR.* files found
+            ValueError: if file sequence is incomplete (e.g., .1, .2, .4 missing .3)
+
+        Returns:
+            {
+                "frames": list[Atoms],
+                "temperatures": list[float],
+                "energies": list[float],
+                "times_ps": list[float],
+            }
+        """
+        # Find all XDATCAR.* files
+        xdatcar_files = sorted(vasp_dir.glob("XDATCAR.*"))
+
+        if not xdatcar_files:
+            raise FileNotFoundError(f"No XDATCAR.* files found in {vasp_dir}")
+
+        # Extract and validate numerical sequence
+        file_numbers = []
+        for fpath in xdatcar_files:
+            try:
+                num = int(fpath.name.split(".")[-1])
+                file_numbers.append(num)
+            except (ValueError, IndexError):
+                raise ValueError(f"Cannot parse file number from {fpath.name}")
+
+        # Check sequence is continuous (no gaps)
+        file_numbers.sort()
+        for i, num in enumerate(file_numbers):
+            if num != file_numbers[0] + i:
+                missing = file_numbers[0] + i
+                raise ValueError(
+                    f"Missing XDATCAR.{missing} in sequence: {file_numbers}"
+                )
+
+        # Re-sort paths by parsed numbers
+        xdatcar_files = sorted(xdatcar_files, key=lambda p: int(p.name.split(".")[-1]))
+
+        LOGGER.info(
+            f"Loading {len(xdatcar_files)} fragmented XDATCAR files from {vasp_dir}"
+        )
+
+        # Load and merge frames
+        all_frames = []
+        all_energies = []
+        all_temperatures = []
+        time_offset_ps = 0.0
+        times_ps = []
+
+        for i, fpath in enumerate(xdatcar_files):
+            LOGGER.info(f"Loading {fpath.name}")
+            frames_in_file = ase_read(str(fpath), index=":")
+            if not isinstance(frames_in_file, list):
+                frames_in_file = [frames_in_file]
+
+            # Check for overlap with previous file
+            if i > 0 and all_frames:
+                if self._frames_overlap(all_frames[-1], frames_in_file[0]):
+                    LOGGER.info(
+                        f"Detected frame overlap between XDATCAR.{file_numbers[i - 1]} "
+                        f"and XDATCAR.{file_numbers[i]}; skipping duplicate"
+                    )
+                    frames_in_file = frames_in_file[1:]
+
+            # Add frames and build time series for this file
+            for frame in frames_in_file:
+                all_frames.append(frame)
+                times_ps.append(time_offset_ps)
+                time_offset_ps += md_timestep_fs / 1000  # Convert fs to ps
+
+                # Fallback energies/temperatures (zeros/1400K)
+                all_energies.append(0.0)
+                all_temperatures.append(1400.0)
+
+        LOGGER.info(f"Merged trajectory: {len(all_frames)} total frames")
+
+        return {
+            "frames": all_frames,
+            "temperatures": all_temperatures,
+            "energies": all_energies,
+            "times_ps": times_ps,
+        }
 
     def load_trajectory(self, vasp_dir: Path) -> dict:
         """
@@ -140,7 +255,7 @@ class VASPTrajectoryAnalyzer:
         )
 
     def identify_equilibrated_window(
-        self, trajectory_data: dict, config: VASPEquilibrationConfig
+        self, trajectory_data: dict, config: VASPConfig
     ) -> tuple[int, int]:
         """
         Identify equilibrated window in trajectory using sliding window.
@@ -159,14 +274,16 @@ class VASPTrajectoryAnalyzer:
         frames = trajectory_data["frames"]
 
         # Skip burn-in
-        burn_in_frames = int(config.burn_in_ps / (config.md_timestep_fs / 1000))
+        burn_in_frames = int(config.burn_in_ps / (config.md_timestep_fs_potim / 1000))
         if burn_in_frames >= len(frames):
             burn_in_frames = len(frames) // 3
 
         LOGGER.info(f"Discarding first {burn_in_frames} frames as burn-in")
 
         # Calculate window size
-        window_frames = int(config.stability_window_ps / (config.md_timestep_fs / 1000))
+        window_frames = int(
+            config.stability_window_ps / (config.md_timestep_fs_potim / 1000)
+        )
         if window_frames > len(frames) - burn_in_frames:
             window_frames = len(frames) - burn_in_frames
 
@@ -221,7 +338,9 @@ class VASPTrajectoryAnalyzer:
                 else:
                     break
 
-            best_duration_ps = (best_end - best_start) * config.md_timestep_fs / 1000
+            best_duration_ps = (
+                (best_end - best_start) * config.md_timestep_fs_potim / 1000
+            )
             mean_temp_in_window = np.mean(temperatures[best_start:best_end])
             std_temp_in_window = np.std(temperatures[best_start:best_end])
 
@@ -245,7 +364,7 @@ class VASPTrajectoryAnalyzer:
         eq_start_idx: int,
         eq_end_idx: int,
         config: AnalysisConfig,
-        vasp_config: VASPEquilibrationConfig,
+        vasp_config: VASPConfig,
     ) -> list[Atoms]:
         """
         Select decorrelated seed frames from equilibrated window.
@@ -258,7 +377,7 @@ class VASPTrajectoryAnalyzer:
 
         # Calculate stride in frames
         stride_frames = int(
-            config.seed_spacing_ps / (vasp_config.md_timestep_fs / 1000)
+            config.seed_spacing_ps / (vasp_config.md_timestep_fs_potim / 1000)
         )
         stride_frames = max(stride_frames, 1)
 

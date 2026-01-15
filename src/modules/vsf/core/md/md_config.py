@@ -10,14 +10,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class VASPEquilibrationConfig:
+class VASPConfig:
     """Parameters for identifying equilibrated window in VASP MD."""
 
     burn_in_ps: float
     stability_window_ps: float
     temperature_target_k: float
     temperature_tolerance_k: float
-    md_timestep_fs: float = 2.0  # Timestep from VASP POTIM
+    md_timestep_fs_potim: float = 2.0  # Timestep from VASP POTIM
 
 
 @dataclass
@@ -26,7 +26,7 @@ class GNNMDConfig:
 
     thermostat_type: str  # "nose_hoover_chain" or "langevin"
     simulation_duration_ps: float
-    md_timestep_fs: float  # Timestep in femtoseconds
+    md_timestep_fs_potim: float  # Timestep in femtoseconds
     target_temperature_k: float
     nose_hoover_damping_fs: Optional[float] = (
         None  # Damping time for Nosé-Hoover (units: fs)
