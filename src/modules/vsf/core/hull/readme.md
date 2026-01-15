@@ -1,4 +1,3 @@
-
 ### **Equation of state**
 
 The EOS benchmark protocol in Arena includes first unconstrained structure optimization at $0 , \mathrm{K}$ and subsequently multiple energy calculations of isotropic deformations, including ionic relaxation at volumetric strain ranging from $-20%$ to $20%$ of the optimized structure. After ionic relaxation of $21$ deformed structures for each crystal, Birch–Murnaghan EOS is fitted with the following equation:
@@ -20,9 +19,7 @@ where $V_0$ is the equilibrium volume after initial structure optimization, and 
 
 $$
 \frac{\Delta E}{B V_0} =
-
 \frac{E - E_0}{B V_0} =
-
 \frac{9}{16}
 \left[
 \left(\eta^2 - 1\right)^2
@@ -31,4 +28,3 @@ $$
 \right)
 \right]
 $$
-
