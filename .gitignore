@@ -16,9 +16,18 @@ src/modules_v2/main/xds-metrics/xout*
 
 ## all main
 src/modules_v2/main/*/pics/
-src/modules_v2/vsf/bin/devil/integration_test_20251006_030034
-**tables.pdf
 src/modules_v2/main/xds-metrics/x-*.pdf
+**tables.pdf
+
+## md-txt
+src/modules/md-txt/prompt-hull.md
+src/modules/md-txt/prompt-md.md
+
+
+## bin
+src/modules_v2/vsf/bin/devil/integration_test_20251006_030034
+src/modules/vsf/bin/devil/demo_vasp_calcs
+
 
 ## md
 src/modules_v2/main/md/src-tgz
