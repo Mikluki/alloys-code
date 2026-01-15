@@ -26,14 +26,14 @@ for target_dir in target_dirs:
     LOGGER.info(f"Processing DIR: {target_dir.parent}/{target_dir.name}")
     vasp_energy_workflow = VaspEnergyWorkflow()
 
-    # # Run workflow
-    # results = vasp_energy_workflow.run_workflow(
-    #     target_dir=target_dir,
-    #     hull_dir=hull_dir,
-    #     energy_source=EnergySource.VASP,
-    #     force_recalculate=force_recalculate,
-    #     from_json=from_json,
-    # )
+    # Run workflow
+    results = vasp_energy_workflow.run_workflow(
+        target_dir=target_dir,
+        hull_dir=hull_dir,
+        energy_source=EnergySource.VASP,
+        force_recalculate=force_recalculate,
+        from_json=from_json,
+    )
 
     vasp_data_workflow = VaspDataWorkflow()
     vasp_data_workflow.extract_target_structure_stresses(
