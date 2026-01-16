@@ -1,11 +1,11 @@
 import logging
 
-from ..energy.energy_source import EnergySource
-from .base import BaseNN
+from vsf.calculators.base import BaseNN
 
 # These imports trigger calculator registration via decorators
-from .custom import *
-from .registry import get_calculator_registry
+from vsf.calculators.custom import *
+from vsf.calculators.registry import get_calculator_registry
+from vsf.energy.energy_source import EnergySource
 
 LOGGER = logging.getLogger(__name__)
 

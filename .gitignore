@@ -1,6 +1,7 @@
 ### CONVENTIONS ###
 # global outcar ingore pattern regardless of dataset::
 **/10-outcar*/
+**/00-test
 # ppr-** pieces to include in actual paper text
 
 # Custom patterns

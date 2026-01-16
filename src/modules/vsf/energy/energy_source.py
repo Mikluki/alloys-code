@@ -14,7 +14,7 @@ except ImportError:
 
 # Import as a type reference only
 if TYPE_CHECKING:
-    from ..calculators.base import BaseNN
+    from vsf.calculators.base import BaseNN
 
 
 class EnergySource(Enum):
@@ -91,7 +91,7 @@ class EnergySource(Enum):
 
     def get_calculator(self, device: str = "cpu", auto_init: bool = True) -> "BaseNN":
         """Get the calculator instance for this energy source."""
-        from ..calculators import get_calculator
+        from vsf.calculators import get_calculator
 
         return get_calculator(self, device=device, auto_init=auto_init)
 
