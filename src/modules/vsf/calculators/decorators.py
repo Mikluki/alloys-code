@@ -1,9 +1,9 @@
 import logging
 from typing import Type, TypeVar
 
-from ..energy.energy_source import EnergySource
-from .base import BaseNN
-from .registry import register_calculator
+from vsf.calculators.base import BaseNN
+from vsf.calculators.registry import register_calculator
+from vsf.energy.energy_source import EnergySource
 
 LOGGER = logging.getLogger(__name__)
 

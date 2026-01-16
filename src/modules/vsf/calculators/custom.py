@@ -1,9 +1,9 @@
 import logging
 from pathlib import Path
 
-from ..energy.energy_source import EnergySource
-from .base import BaseNN
-from .decorators import calculator_for
+from vsf.calculators.base import BaseNN
+from vsf.calculators.decorators import calculator_for
+from vsf.energy.energy_source import EnergySource
 
 LOGGER = logging.getLogger(__name__)
 MODELS_DIR = "uvpy/models/"

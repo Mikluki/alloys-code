@@ -1,8 +1,8 @@
 import logging
 from typing import Dict, Type
 
-from ..energy.energy_source import EnergySource
-from .base import BaseNN
+from vsf.calculators.base import BaseNN
+from vsf.energy.energy_source import EnergySource
 
 LOGGER = logging.getLogger(__name__)
 # Private registry cache

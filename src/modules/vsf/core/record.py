@@ -8,13 +8,13 @@ import numpy as np
 import numpy.typing as npt
 from pymatgen.io.vasp import Poscar
 
-from ..energy.analyzers import (
+from vsf.energy.analyzers import (
     FormationEnergyAnalyzer,
     PotentialEnergyAnalyzer,
 )
-from ..energy.energy_source import EnergySource
-from ..properties.stress.analyzer import StressAnalyzer
-from ..vasp.grep import extract_outcar_energy_per_atom, extract_stress_voigt
+from vsf.energy.energy_source import EnergySource
+from vsf.properties.stress.analyzer import StressAnalyzer
+from vsf.vasp.grep import extract_outcar_energy_per_atom, extract_stress_voigt
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ class StructureRecord:
         if self._structure is None:
             if not self.poscar_path.exists():
                 raise FileNotFoundError(f"POSCAR not found: {self.poscar_path}")
-            LOGGER.info(f"Structure << ### WAS LOADED ### >>")
+            LOGGER.info("Structure << ### WAS LOADED ### >>")
             self._structure = Poscar.from_file(self.poscar_path).structure
         return self._structure
 

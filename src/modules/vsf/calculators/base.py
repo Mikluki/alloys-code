@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from ..energy.energy_source import EnergySource
+from vsf.energy.energy_source import EnergySource
 
 LOGGER = logging.getLogger(__name__)
 
