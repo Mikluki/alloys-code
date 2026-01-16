@@ -13,6 +13,7 @@
 **.ipynb
 **.tgz
 **/00-outcar-pure
+**00-src
 
 ## slides
 src/modules_v2/main/xslides/*.png
@@ -42,10 +43,13 @@ src/modules/main/hull-eform/src
 src/modules/main/hull-eform/pics
 
 ## liquid
-src/modules/main/liquid/liquid-0input
-src/modules/main/liquid/liquid-1tests
-src/modules/main/liquid/liquid-300k1-analysis
-src/modules/main/liquid/liquid-300k2-analysis
+src/modules/main/liquid/prep/0input/e-*
+src/modules/main/liquid/prep/0input/a-*
+src/modules/main/liquid/prep/1tests/*_supercell64_seed3
+src/modules/main/liquid/prep/1tests/x-mv
+src/modules/main/liquid/prep/1tests/x-test
+src/modules/main/liquid/prep/300*-analysis/e-*
+src/modules/main/liquid/prep/300*-analysis/x-*
 
 ## rand
 src/modules/main/rand-eform/e-rand-**
