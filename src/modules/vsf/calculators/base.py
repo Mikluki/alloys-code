@@ -15,6 +15,8 @@ class BaseNN(ABC):
     2. Call initialize() after switching to the appropriate venv
     """
 
+    _default_energy_source = None
+
     def __init__(
         self,
         checkpoint_path: str | Path | None = None,
@@ -28,9 +30,10 @@ class BaseNN(ABC):
     @property
     def energy_source(self) -> EnergySource:
         """Get the energy source associated with this calculator."""
-        if self._energy_source is None:
+        source = self._energy_source or self.__class__._default_energy_source
+        if source is None:
             raise RuntimeError("Energy source not set for this calculator.")
-        return self._energy_source
+        return source
 
     @energy_source.setter
     def energy_source(self, value: EnergySource) -> None:
@@ -74,5 +77,5 @@ class BaseNN(ABC):
         return {
             "checkpoint": str(self.checkpoint_path) if self.checkpoint_path else None,
             "device": self.device,
-            "calculator_type": self.__class__.__name__,
+            "calculator_class": self.__class__.__name__,
         }

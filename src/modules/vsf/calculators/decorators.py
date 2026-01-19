@@ -15,6 +15,7 @@ def calculator_for(energy_source: EnergySource):
 
     def decorator(cls: T) -> T:
         register_calculator(energy_source, cls)
+        cls._default_energy_source = energy_source
         return cls
 
     return decorator

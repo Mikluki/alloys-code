@@ -28,7 +28,10 @@ class Dpa31(BaseNN):
             self.checkpoint_path or Path.home() / MODELS_DIR / "dpa-3.1-3m-ft.pth"
         )
 
-        LOGGER.info(f"{__class__.__name__} :: used model_path: `{model_path}`")
+        self.checkpoint_path = model_path
+        LOGGER.info(
+            f"{__class__.__name__} :: used model_path: `{self.checkpoint_path}`"
+        )
 
         self._ase_calculator = DP(
             model_path,
@@ -53,7 +56,10 @@ class Grace2lOamL(BaseNN):
 
         model_name = self.checkpoint_path or "GRACE-2L-OMAT-large-ft-AM"
 
-        LOGGER.info(f"{__class__.__name__} :: used model_name: `{model_name}`")
+        self.checkpoint_path = model_name
+        LOGGER.info(
+            f"{__class__.__name__} :: used model_name: `{self.checkpoint_path}`"
+        )
 
         self._ase_calculator = grace_fm(
             model_name,
@@ -79,15 +85,18 @@ class Nequip(BaseNN):
         """
         from nequip.ase import NequIPCalculator
 
-        checkpoint = (
+        model_path = (
             self.checkpoint_path
             or Path.home() / MODELS_DIR / "mir-group__NequIP-OAM-L__0.1.nequip.pt2"
         )
 
-        LOGGER.info(f"{__class__.__name__} :: used checkpoint_path: `{checkpoint}`")
+        self.checkpoint_path = model_path
+        LOGGER.info(
+            f"{__class__.__name__} :: used checkpoint_path: `{self.checkpoint_path}`"
+        )
 
         self._ase_calculator = NequIPCalculator.from_compiled_model(
-            compile_path=checkpoint,
+            compile_path=model_path,
             device=self.device,
             **kwargs,
         )
@@ -111,15 +120,18 @@ class Allegro(BaseNN):
         """
         from nequip.ase import NequIPCalculator
 
-        checkpoint = (
+        model_path = (
             self.checkpoint_path
             or Path.home() / MODELS_DIR / "mir-group__Allegro-OAM-L__0.1.nequip.pt2"
         )
 
-        LOGGER.info(f"{__class__.__name__} :: used checkpoint_path: `{checkpoint}`")
+        self.checkpoint_path = model_path
+        LOGGER.info(
+            f"{__class__.__name__} :: used checkpoint_path: `{self.checkpoint_path}`"
+        )
 
         self._ase_calculator = NequIPCalculator.from_compiled_model(
-            compile_path=checkpoint,
+            compile_path=model_path,
             device=self.device,
             **kwargs,
         )
@@ -138,17 +150,20 @@ class Esen(BaseNN):
         from fairchem.core import OCPCalculator
 
         # Use provided checkpoint or default
-        checkpoint = (
+        model_path = (
             self.checkpoint_path or Path.home() / MODELS_DIR / "esen_30m_oam.pt"
         )
 
-        LOGGER.info(f"{__class__.__name__} :: used checkpoint_path: `{checkpoint}`")
+        self.checkpoint_path = model_path
+        LOGGER.info(
+            f"{__class__.__name__} :: used checkpoint_path: `{self.checkpoint_path}`"
+        )
 
         # Convert device string to cpu boolean
         cpu = self.device == "cpu"
 
         self._ase_calculator = OCPCalculator(
-            checkpoint_path=checkpoint,
+            checkpoint_path=model_path,
             cpu=cpu,
             **kwargs,
         )
@@ -178,7 +193,10 @@ class Mace(BaseNN):
             or Path.home() / MODELS_DIR / "MACE-matpes-pbe-omat-ft.model"
         )
 
-        LOGGER.info(f"{__class__.__name__} :: used model_path: `{model_path}`")
+        self.checkpoint_path = model_path
+        LOGGER.info(
+            f"{__class__.__name__} :: used model_path: `{self.checkpoint_path}`"
+        )
 
         self._ase_calculator = mace_mp(
             model=model_path,
@@ -210,6 +228,10 @@ class Mace_mpa_0(BaseNN):
         # Use provided checkpoint or default
         model_path = (
             self.checkpoint_path or Path.home() / MODELS_DIR / "mace-mpa-0-medium.model"
+        )
+        self.checkpoint_path = model_path
+        LOGGER.info(
+            f"{__class__.__name__} :: used model_path: `{self.checkpoint_path}`"
         )
 
         self._ase_calculator = mace_mp(
