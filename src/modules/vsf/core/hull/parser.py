@@ -44,7 +44,7 @@ class OutcarData:
 class EosPoint:
     """Single point on an EOS curve (one volume_factor per structure/method).
 
-    Key identity: (method, mp_id, volume_factor) is unique.
+    Key identity: (method, vasp_dir_name, volume_factor) is unique.
 
     Status semantics:
         "ok": OUTCAR parsed successfully (does NOT imply converged).
@@ -53,9 +53,8 @@ class EosPoint:
 
     Attributes:
         method: Computational method ("vasp", "mace", "sevennet", etc.).
-        mp_id: Materials Project ID or structure identifier.
-        volume_factor: Scaling factor applied to unit cell (0.8, 1.0, 1.2, etc.).
-        dir_name: Original directory name (for traceability).
+        vasp_dir_name: Original directory name (e.g., "Al_mp-134_0.8").
+        volume_factor: Scaling factor extracted from dir_name (0.8, 1.0, 1.2, etc.).
         outcar_path: Absolute path to OUTCAR (for clickable provenance).
         status: "ok", "missing", or "failed".
         converged_force: True if max_force <= fmax_target (None if failed/missing).
@@ -64,9 +63,8 @@ class EosPoint:
     """
 
     method: str
-    mp_id: str
+    vasp_dir_name: str
     volume_factor: float
-    dir_name: str
     outcar_path: Path
     status: str
 
@@ -132,16 +130,16 @@ def parse_outcar(outcar_path: str | Path) -> OutcarData:
     )
 
 
-def _extract_mp_id_and_volume_factor(dir_name: str) -> tuple[str, float]:
-    """Extract mp_id and volume_factor from directory name.
+def _extract_volume_factor(dir_name: str) -> float:
+    """Extract volume_factor from directory name.
 
-    Example: "Al_mp-134_0.8" → ("Al_mp-134", 0.8)
+    Example: "Al_mp-134_0.8" → 0.8
 
     Args:
-        dir_name: Directory name with pattern "{mp_id}_{volume_factor}".
+        dir_name: Directory name with pattern "{id_prefix}_{volume_factor}".
 
     Returns:
-        Tuple of (mp_id, volume_factor).
+        Volume factor as float.
 
     Raises:
         ValueError: If parsing fails.
@@ -150,13 +148,13 @@ def _extract_mp_id_and_volume_factor(dir_name: str) -> tuple[str, float]:
     if len(parts) != 2:
         raise ValueError(f"Cannot parse dir_name (expected 'ID_factor'): {dir_name}")
 
-    mp_id, volume_factor_str = parts
+    volume_factor_str = parts[1]
     try:
         volume_factor = float(volume_factor_str)
     except ValueError:
         raise ValueError(f"Cannot parse volume_factor as float: {volume_factor_str}")
 
-    return mp_id, volume_factor
+    return volume_factor
 
 
 def build_eos_table(
@@ -167,7 +165,7 @@ def build_eos_table(
 ) -> list[EosPoint]:
     """Build EOS table by parsing all OUTCAR files in target directory.
 
-    Expects directory structure: target_dir/{mp_id}_{volume_factor}/OUTCAR
+    Expects directory structure: target_dir/{vasp_dir_name}/OUTCAR
 
     Args:
         target_dir: Root directory containing volume-scaled subdirectories.
@@ -180,7 +178,7 @@ def build_eos_table(
         Includes failed/missing runs with status="failed"/"missing".
 
     Raises:
-        ValueError: If duplicate (method, mp_id, volume_factor) keys detected.
+        ValueError: If duplicate (method, vasp_dir_name, volume_factor) keys detected.
     """
     target_dir = Path(target_dir)
     eos_points = []
@@ -190,12 +188,12 @@ def build_eos_table(
     outcar_paths = sorted(target_dir.glob("*/OUTCAR"))
 
     for outcar_path in outcar_paths:
-        dir_name = outcar_path.parent.name
+        vasp_dir_name = outcar_path.parent.name
 
         try:
-            # Parse directory name
-            mp_id, volume_factor = _extract_mp_id_and_volume_factor(dir_name)
-            key = (method, mp_id, volume_factor)
+            # Parse directory name to extract volume_factor
+            volume_factor = _extract_volume_factor(vasp_dir_name)
+            key = (method, vasp_dir_name, volume_factor)
 
             # Check uniqueness (fail-fast)
             if key in seen_keys:
@@ -212,9 +210,8 @@ def build_eos_table(
             # Create EosPoint with full data
             point = EosPoint(
                 method=method,
-                mp_id=mp_id,
+                vasp_dir_name=vasp_dir_name,
                 volume_factor=volume_factor,
-                dir_name=dir_name,
                 outcar_path=outcar_path,
                 status="ok",
                 V=outcar_data.V,
@@ -233,15 +230,14 @@ def build_eos_table(
         except FileNotFoundError:
             # OUTCAR missing
             try:
-                mp_id, volume_factor = _extract_mp_id_and_volume_factor(dir_name)
-                key = (method, mp_id, volume_factor)
+                volume_factor = _extract_volume_factor(vasp_dir_name)
+                key = (method, vasp_dir_name, volume_factor)
                 if key not in seen_keys:
                     seen_keys.add(key)
                     point = EosPoint(
                         method=method,
-                        mp_id=mp_id,
+                        vasp_dir_name=vasp_dir_name,
                         volume_factor=volume_factor,
-                        dir_name=dir_name,
                         outcar_path=outcar_path,
                         status="missing",
                         warnings=["OUTCAR not found"],
@@ -254,15 +250,14 @@ def build_eos_table(
         except Exception as e:
             # Parse error or other failure
             try:
-                mp_id, volume_factor = _extract_mp_id_and_volume_factor(dir_name)
-                key = (method, mp_id, volume_factor)
+                volume_factor = _extract_volume_factor(vasp_dir_name)
+                key = (method, vasp_dir_name, volume_factor)
                 if key not in seen_keys:
                     seen_keys.add(key)
                     point = EosPoint(
                         method=method,
-                        mp_id=mp_id,
+                        vasp_dir_name=vasp_dir_name,
                         volume_factor=volume_factor,
-                        dir_name=dir_name,
                         outcar_path=outcar_path,
                         status="failed",
                         warnings=[str(e)],
@@ -279,7 +274,7 @@ def eos_to_dataframe(eos_points: list[EosPoint]) -> pd.DataFrame:
     """Convert list of EosPoint objects to pandas DataFrame.
 
     Preserves numpy arrays as object dtype columns.
-    Includes traceback columns (dir_name, outcar_path) for provenance.
+    Includes traceback columns (vasp_dir_name, outcar_path) for provenance.
 
     Args:
         eos_points: List of EosPoint objects.
@@ -292,9 +287,8 @@ def eos_to_dataframe(eos_points: list[EosPoint]) -> pd.DataFrame:
     for point in eos_points:
         row = {
             "method": point.method,
-            "mp_id": point.mp_id,
+            "vasp_dir_name": point.vasp_dir_name,
             "volume_factor": point.volume_factor,
-            "dir_name": point.dir_name,
             "outcar_path": str(point.outcar_path),
             "status": point.status,
             "V": point.V,
@@ -313,7 +307,9 @@ def eos_to_dataframe(eos_points: list[EosPoint]) -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
 
-    # Ensure sorted by (method, mp_id, volume_factor)
-    df = df.sort_values(["method", "mp_id", "volume_factor"]).reset_index(drop=True)
+    # Ensure sorted by (method, vasp_dir_name, volume_factor)
+    df = df.sort_values(["method", "vasp_dir_name", "volume_factor"]).reset_index(
+        drop=True
+    )
 
     return df

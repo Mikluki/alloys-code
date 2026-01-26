@@ -9,7 +9,7 @@ from ase.io import read
 from matplotlib.figure import Figure
 from scipy.optimize import curve_fit
 
-from ..plot.utils import CHILL_COLORS, save_plot_to_file, set_plot_defaults
+from vsf.core.plot.utils import CHILL_COLORS, save_plot_to_file, set_plot_defaults
 
 LOGGER = logging.getLogger(__name__)
 

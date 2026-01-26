@@ -1,13 +1,13 @@
 import logging
 from pathlib import Path
 
-from vsf.core.md.plot import plot_force_collapse
+from vsf.core.md_stability.plot import plot_force_collapse
 from vsf.logging import setup_logging
 
 # Logging
 (log_dir := Path("logs")).mkdir(exist_ok=True)
 LOGGER = setup_logging(
-    log_file=log_dir / f"x-gnn-md-post-plot.log",
+    log_file=log_dir / "x-gnn-md-post-plot.log",
     console_level=logging.DEBUG,
     file_level=logging.DEBUG,
 )

@@ -10,19 +10,19 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from vsf.core.md.md_analysis import (
+from vsf.core.md_stability.md_analysis import (
     EnsembleAnalyzer,
     TrajectorySet,
 )
-from vsf.core.md.md_config import (
+from vsf.core.md_stability.md_config import (
     AnalysisConfig,
     GNNMDConfig,
     LoggingConfig,
     StabilityCheckConfig,
     VASPConfig,
 )
-from vsf.core.md.md_runner import GNNMDRunner
-from vsf.core.md.md_vasp import VASPTrajectoryAnalyzer
+from vsf.core.md_stability.md_runner import GNNMDRunner
+from vsf.core.md_stability.md_vasp import VASPTrajectoryAnalyzer
 from vsf.energy.energy_source import EnergySource
 from vsf.logging import setup_logging
 
