@@ -29,7 +29,7 @@ def relax_structure(
     constant_volume: bool = False,
     scalar_pressure=0.0 * units.GPa,
     fmax: float = 0.02,
-    trajectory_dir: str | Path = "",
+    trajectory_path: Path | None = None,
     logfile: str | None = None,
 ) -> Dict[str, Any]:
     """
@@ -101,6 +101,11 @@ def relax_structure(
             Maximum force tolerance for convergence, in eV/Å.
             Lower values give more precise geometries but take longer to converge.
 
+        trajectory_path (Path | None, default=None):
+            Where to write the ASE trajectory (.traj).
+            - None: use default name in current working directory: rtraj_<calc_name>.traj
+            - Path: full path to the .traj file (parent dirs will be created)
+
         logfile (str | None, default=None):
             Path to the optimizer log file:
             - None: Use default logging
@@ -146,10 +151,20 @@ def relax_structure(
         )
         optimizer_target = cell_filter
 
-    # Use calculator name in trajectory filename if available
-    calc_name = getattr(calculator, "name", "unknown")
-    trajectory_fname = f"rtraj_{calc_name}.traj"
-    trajectory_path = Path(trajectory_dir, trajectory_fname)
+    # --- trajectory path handling (new) ---
+    calc_name = getattr(calculator, "name", None) or calculator.__class__.__name__
+    default_traj_name = f"rtraj_{calc_name}.traj"
+
+    if trajectory_path is None:
+        traj_path = Path(default_traj_name)
+    else:
+        traj_path = Path(trajectory_path)
+        # If user accidentally passed a directory, drop the default name into it.
+        if traj_path.exists() and traj_path.is_dir():
+            traj_path = traj_path / default_traj_name
+
+    traj_path.parent.mkdir(parents=True, exist_ok=True)
+    # -------------------------------------
 
     # Set up the FIRE optimizer with passed parameters
     dyn = FIRE(
@@ -395,7 +410,7 @@ class PoscarRelaxationManager:
 
         # Set default calculator to Mace_mpa_0 if none provided
         if calculator is None:
-            calculator = Mace_mpa_0(auto_init=auto_init)
+            calculator = Mace_mpa_0()
         elif isinstance(calculator, type) and issubclass(calculator, Mace_mpa_0):
             # If a class type is passed but not instantiated
             calculator = calculator(auto_init=auto_init)
@@ -404,33 +419,6 @@ class PoscarRelaxationManager:
             setattr(calculator, "auto_init", auto_init)
 
         self.calculator = calculator
-
-    def set_calculator(
-        self,
-        calculator: Mace_mpa_0 | Calculator | None = None,
-        auto_init: bool = True,
-    ) -> "PoscarRelaxationManager":
-        """
-        Set or update the calculator to use for relaxations.
-
-        Parameters:
-        -----------
-        calculator : Optional[Union[Mace_mpa_0, Type[Mace_mpa_0], Calculator]]
-            ASE-compatible calculator, defaults to Mace_mpa_0 if None
-        auto_init : bool, default=True
-            Whether to initialize the calculator with auto_init=True
-        """
-        if calculator is None:
-            calculator = Mace_mpa_0(auto_init=auto_init)
-        elif isinstance(calculator, type):
-            # If a class is passed instead of an instance
-            if hasattr(calculator, "auto_init"):
-                calculator = calculator(auto_init=auto_init)
-            else:
-                calculator = calculator()
-
-        self.calculator = calculator
-        return self
 
     def _get_ase_calculator(self) -> Calculator:
         """
@@ -595,7 +583,7 @@ class PoscarRelaxationManager:
             constant_symmetry=constant_symmetry,
             fmax=fmax,
             scalar_pressure=scalar_pressure,
-            trajectory_dir=str(poscar_dir),
+            trajectory_path=poscar_dir,
             logfile=logfile,
         )
 
@@ -999,14 +987,14 @@ def test_chained_relaxation_workflow():
         print(f"Stage 2 completed: {len(stage2_results['results'])} structures relaxed")
 
         # Show results
-        print(f"\n=== Summary ===")
+        print("\n=== Summary ===")
         print(f"Stages completed: {chain.list_stages()}")
 
         for stage_name in chain.list_stages():
             stage_paths = chain.get_stage_paths(stage_name)
             print(f"Stage '{stage_name}': {[p.parent.name for p in stage_paths]}")
 
-        print(f"\n✓ ChainedRelaxation test successful!")
+        print("\n✓ ChainedRelaxation test successful!")
         print(f"Results available at: {test_dir}")
 
     except Exception as e:
