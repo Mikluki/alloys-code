@@ -15,6 +15,7 @@
 **.tgz
 **/00-outcar-pure
 **00-src
+**00-clean
 
 ## slides
 src/modules_v2/main/xslides/*.png
@@ -37,11 +38,12 @@ src/modules_v2/vsf/bin/devil/integration_test_20251006_030034
 src/modules/vsf/bin/devil/demo_vasp_calcs
 
 ## md
-src/modules/main/md-independent/data
+src/modules/main/md-base/data
+src/modules/main/md-base/results
 
 ## hull
-src/modules/main/hull-eform/src
 src/modules/main/hull-eform/pics
+src/modules/main/hull-eform/20-results
 
 ## liquid
 src/modules/main/liquid/prep/0input/e-*
